@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../../core/models/library_models.dart';
 import '../../core/models/search_models.dart';
 import '../../core/search/local_index.dart';
-import '../../core/search/search_engine.dart';
 import '../../core/services/sift_scope.dart';
 import '../../core/theme/sift_theme.dart';
 import '../../core/utils/formatters.dart';
@@ -424,7 +423,7 @@ class SearchScreenState extends State<SearchScreen> {
                 child: AnswerCard(
                   answer: bundle.answer!,
                   onOpenLink: (url) =>
-                      openSiftUrl(context, url, title: bundle.answer?.title),
+                      openSiftUrl(context, url, title: bundle.answer?.title ?? ''),
                 ),
               ),
             ),
@@ -791,7 +790,7 @@ class _SuggestionPanel extends StatelessWidget {
                   Icon(
                     switch (suggestion.kind) {
                       SuggestionKind.history => Icons.history_rounded,
-                      SuggestionKind.local => Icons.database_outlined,
+                      SuggestionKind.local => Icons.storage_outlined,
                       SuggestionKind.web => Icons.search_rounded,
                     },
                     size: 17,

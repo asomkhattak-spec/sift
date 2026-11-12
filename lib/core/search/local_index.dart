@@ -162,8 +162,8 @@ class LocalIndex extends ChangeNotifier {
 
   void _rebuild() {
     final documents = allDocuments;
-    if (_core != null && _core!.isAvailable) {
-      _nativeReady = _core!.replaceIndex(
+    if (_core != null && _core.isAvailable) {
+      _nativeReady = _core.replaceIndex(
         documents.map((document) => document.toJson()).toList(growable: false),
       );
     } else {

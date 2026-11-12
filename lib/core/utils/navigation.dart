@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../services/sift_scope.dart';
-import '../utils/text_utils.dart';
-import '../../widgets/sift_ui.dart';
 import '../../screens/browser/browser_screen.dart';
+import '../../widgets/sift_ui.dart';
+import '../services/sift_scope.dart';
+import 'text_utils.dart';
 
 /// Opens links according to the user's browser preference, strips known
 /// tracking parameters when that setting is on, and records a visit only when

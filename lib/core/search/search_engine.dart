@@ -36,7 +36,6 @@ class SearchEngine {
     required LocalIndex localIndex,
     SiftCore? core,
   })  : _settings = settings,
-        _http = http,
         _local = localIndex,
         _core = core,
         _answers = InstantAnswerEngine(http),
@@ -52,7 +51,6 @@ class SearchEngine {
   }
 
   final SettingsService _settings;
-  final SiftHttpBase _http;
   final LocalIndex _local;
   final SiftCore? _core;
   final InstantAnswerEngine _answers;

@@ -3,7 +3,6 @@ import 'dart:math' as math;
 
 import '../models/search_models.dart';
 import '../services/http_service.dart';
-import '../utils/formatters.dart';
 import '../utils/text_utils.dart';
 
 /// Resolves small, self-contained questions before or alongside web results.

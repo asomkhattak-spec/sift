@@ -12,6 +12,7 @@ class SiftSearchBar extends StatefulWidget {
     this.compact = false,
     this.autofocus = false,
     this.leading,
+    super.key,
   });
 
   final TextEditingController controller;

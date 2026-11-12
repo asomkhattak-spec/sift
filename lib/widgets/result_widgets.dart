@@ -5,7 +5,6 @@ import '../core/services/sift_scope.dart';
 import '../core/theme/sift_theme.dart';
 import '../core/utils/formatters.dart';
 import '../core/utils/navigation.dart';
-import '../core/utils/text_utils.dart';
 import 'sift_ui.dart';
 
 class WebResultTile extends StatelessWidget {

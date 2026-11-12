@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../core/models/library_models.dart';
-import '../../core/models/search_models.dart';
 import '../../core/services/library_service.dart';
 import '../../core/services/sift_scope.dart';
 import '../../core/theme/sift_theme.dart';
