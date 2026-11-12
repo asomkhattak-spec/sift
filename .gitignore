@@ -1,0 +1,37 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+coverage/
+*.iml
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/app/src/main/jniLibs/
+*.jks
+*.keystore
+!android/gradle/wrapper/gradle-wrapper.jar
+
+# Rust
+rust/target/
+target/
+
+# Editors and OS files
+.idea/
+.vscode/
+.DS_Store
+*.swp
+
+# Local configuration
+.env
+.env.*

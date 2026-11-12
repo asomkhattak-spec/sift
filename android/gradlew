@@ -1,0 +1,20 @@
+#!/usr/bin/env sh
+# Sift Gradle launcher.
+#
+# Uses the checked-in Gradle 8.3 wrapper JAR. If the JAR is missing, fall back
+# to a Gradle installation on PATH so CI can still complete a build.
+set -e
+
+if [ -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+  exec java -Dorg.gradle.appname=gradlew \
+    -classpath gradle/wrapper/gradle-wrapper.jar \
+    org.gradle.wrapper.GradleWrapperMain "$@"
+fi
+
+if command -v gradle >/dev/null 2>&1; then
+  exec gradle "$@"
+fi
+
+echo "Gradle was not found. CI installs it with gradle/actions/setup-gradle." >&2
+echo "Locally, install Gradle 8.3 or drop the official wrapper JAR into gradle/wrapper/." >&2
+exit 1

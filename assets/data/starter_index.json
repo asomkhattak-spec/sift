@@ -1,0 +1,898 @@
+[
+ {
+  "id": "local-internet-privacy",
+  "title": "Internet privacy",
+  "url": "https://en.wikipedia.org/wiki/Internet_privacy",
+  "snippet": "Internet privacy is the ability to control what information is collected about you online, who can see it, and how it is used.",
+  "body": "Internet privacy covers the choices and technical measures that limit how personal data is collected, correlated and shared online. It includes control over cookies, IP addresses, account identifiers, browsing history and device signals. Privacy is not a single switch: it depends on the sites you visit, the network you use and the software that mediates the connection. Sift keeps its own search activity on the device by default and makes network sources visible before a query is sent.",
+  "section": "Privacy & safety",
+  "tags": [
+   "privacy",
+   "tracking",
+   "data",
+   "identity"
+  ]
+ },
+ {
+  "id": "local-http-cookie",
+  "title": "HTTP cookie",
+  "url": "https://en.wikipedia.org/wiki/HTTP_cookie",
+  "snippet": "A cookie is a small piece of data a site stores in the browser to remember state between requests.",
+  "body": "Cookies let a website keep you signed in, remember preferences, or recognize a returning browser. First-party cookies belong to the site you are visiting; third-party cookies are set by another domain embedded in the page and are often used for advertising and cross-site measurement. Blocking third-party cookies reduces one common tracking path but does not make a browser anonymous. Sift disables third-party cookies by default and uses an incognito WebView when private browsing is on.",
+  "section": "Privacy & safety",
+  "tags": [
+   "cookies",
+   "browser",
+   "privacy",
+   "tracking"
+  ]
+ },
+ {
+  "id": "local-web-tracking",
+  "title": "Web tracking",
+  "url": "https://en.wikipedia.org/wiki/Web_tracking",
+  "snippet": "Web tracking is the collection of data about a person's activity across websites, often through scripts, pixels and identifiers.",
+  "body": "Tracking can happen through cookies, fingerprinting, redirect links, embedded pixels and server logs. The resulting profiles support advertising, analytics, fraud detection and sometimes research. Blocking known tracker domains helps, but first-party analytics and server-side logging can still observe a visit. A privacy tool should describe these limits instead of promising invisibility. Sift filters tracker requests and strips common campaign parameters from links it opens.",
+  "section": "Privacy & safety",
+  "tags": [
+   "tracking",
+   "fingerprinting",
+   "analytics",
+   "privacy"
+  ]
+ },
+ {
+  "id": "local-tor-network",
+  "title": "Tor network",
+  "url": "https://en.wikipedia.org/wiki/Tor_(network)",
+  "snippet": "Tor is an overlay network that routes traffic through relays to make the origin of a connection difficult to observe.",
+  "body": "Tor sends traffic through several relays in sequence, with each relay knowing only the previous and next hop. This can hide the user's IP address from the destination and resist simple network surveillance, but it adds latency and does not protect information a website receives directly. Tor also cannot protect a device that is compromised. Sift can route through an HTTP proxy, but it does not bundle the Tor network itself.",
+  "section": "Privacy & safety",
+  "tags": [
+   "tor",
+   "anonymity",
+   "proxy",
+   "privacy"
+  ]
+ },
+ {
+  "id": "local-https",
+  "title": "HTTPS",
+  "url": "https://en.wikipedia.org/wiki/HTTPS",
+  "snippet": "HTTPS is HTTP carried over an encrypted TLS connection, protecting data in transit between a browser and a server.",
+  "body": "HTTPS encrypts requests and responses so a network observer cannot read or quietly alter them. It authenticates the server through a certificate chain, which is why certificate warnings matter. HTTPS does not hide which site you contacted from your network provider, and it does not control what the site does with data after it arrives. Sift uses HTTPS endpoints for every network source in its default catalog.",
+  "section": "Privacy & safety",
+  "tags": [
+   "https",
+   "tls",
+   "encryption",
+   "security"
+  ]
+ },
+ {
+  "id": "local-ad-blocking",
+  "title": "Ad blocking",
+  "url": "https://en.wikipedia.org/wiki/Ad_blocking",
+  "snippet": "Ad blocking removes or hides advertising and sometimes tracker requests from web pages.",
+  "body": "Ad blockers work by matching requests against filter lists and blocking those that serve ads or tracking scripts. Good lists reduce page weight, data use and some surveillance, but they can also break sites that depend on the blocked resources. A content blocker is not the same as a privacy network: the site still sees your IP address and first-party activity. Sift filters a conservative tracker list and lets you turn the feature off when a page needs it.",
+  "section": "Privacy & safety",
+  "tags": [
+   "adblock",
+   "trackers",
+   "browser",
+   "privacy"
+  ]
+ },
+ {
+  "id": "local-digital-footprint",
+  "title": "Digital footprint",
+  "url": "https://en.wikipedia.org/wiki/Digital_footprint",
+  "snippet": "A digital footprint is the trail of data left by a person's activity on the internet and connected devices.",
+  "body": "A footprint includes things you post deliberately, such as profiles and comments, and passive records such as login timestamps, location pings and browsing logs. The visible part is only a fraction of the whole because services also keep internal records. Reducing a footprint means limiting what is collected, separating identities and asking services to delete data. Local-only search history is one small part of that larger problem.",
+  "section": "Privacy & safety",
+  "tags": [
+   "footprint",
+   "history",
+   "privacy",
+   "data"
+  ]
+ },
+ {
+  "id": "local-data-minimization",
+  "title": "Data minimization",
+  "url": "https://en.wikipedia.org/wiki/Data_minimization",
+  "snippet": "Data minimization is the principle of collecting only the personal data that is necessary for a stated purpose.",
+  "body": "Data minimization asks services to collect less, keep it for less time and restrict who can use it. It is a core principle in many privacy laws because data that was never collected cannot leak or be repurposed. Search apps can apply the same idea by avoiding accounts, advertising identifiers and unnecessary permissions. Sift stores preferences locally and does not require a sign-in.",
+  "section": "Privacy & safety",
+  "tags": [
+   "privacy",
+   "data",
+   "design",
+   "law"
+  ]
+ },
+ {
+  "id": "local-world-wide-web",
+  "title": "World Wide Web",
+  "url": "https://en.wikipedia.org/wiki/World_Wide_Web",
+  "snippet": "The World Wide Web is an information system of linked documents and applications delivered over the internet.",
+  "body": "The web is built from URLs, browsers, servers and the HTTP protocol. A browser requests a resource, a server responds, and the browser parses HTML, CSS and JavaScript into a page. Search engines are one service on top of this system, not the web itself. Sift can act as a search client and an in-app browser, but it cannot make a private copy of the public web.",
+  "section": "How the web works",
+  "tags": [
+   "web",
+   "internet",
+   "html",
+   "http"
+  ]
+ },
+ {
+  "id": "local-search-engine",
+  "title": "Web search engine",
+  "url": "https://en.wikipedia.org/wiki/Web_search_engine",
+  "snippet": "A web search engine indexes pages and uses retrieval and ranking systems to return results for a query.",
+  "body": "A general search engine discovers pages with crawlers, stores compressed representations in an index, and ranks candidates using signals such as relevance, quality, freshness and click behavior. Large engines also maintain query understanding, spam detection and personalization systems. Building a complete global index is a data-center-scale project, not a feature that fits in a small app. Sift uses independent public APIs and a separate on-device reference index.",
+  "section": "How the web works",
+  "tags": [
+   "search",
+   "index",
+   "ranking",
+   "crawler"
+  ]
+ },
+ {
+  "id": "local-web-crawler",
+  "title": "Web crawler",
+  "url": "https://en.wikipedia.org/wiki/Web_crawler",
+  "snippet": "A web crawler is a program that follows links and downloads pages so they can be indexed.",
+  "body": "Crawlers start from seed URLs, fetch pages, extract links and schedule more requests while respecting robots rules and server load. The collected pages are parsed, deduplicated and stored in an index. Crawling the whole web continuously requires enormous storage and bandwidth. Sift does not run a global crawler; its My Search tab indexes a starter shelf and pages a reader chooses to add.",
+  "section": "How the web works",
+  "tags": [
+   "crawler",
+   "index",
+   "search",
+   "crawling"
+  ]
+ },
+ {
+  "id": "local-ranking",
+  "title": "Ranking (information retrieval)",
+  "url": "https://en.wikipedia.org/wiki/Ranking_(information_retrieval)",
+  "snippet": "Ranking orders documents by estimated relevance to a query using retrieval scores and quality signals.",
+  "body": "Classic information retrieval ranks with statistical signals such as term frequency and inverse document frequency, often combined in formulas like BM25. Modern web ranking adds link analysis, language models, freshness, location and user feedback. A search result list is therefore an argument about relevance, not a neutral list of facts. Sift exposes its sources and applies local reranking on the device.",
+  "section": "How the web works",
+  "tags": [
+   "ranking",
+   "bm25",
+   "relevance",
+   "search"
+  ]
+ },
+ {
+  "id": "local-url",
+  "title": "URL",
+  "url": "https://en.wikipedia.org/wiki/URL",
+  "snippet": "A URL is a compact address that identifies a resource on a network and the scheme used to reach it.",
+  "body": "A URL combines a scheme such as https, a host, an optional port, a path and a query string. Servers and browsers interpret these parts, so changing a path or query can produce a different resource. Tracking parameters are often hidden in the query string, which is why link cleanup matters. Sift strips known campaign parameters when it opens a result.",
+  "section": "How the web works",
+  "tags": [
+   "url",
+   "http",
+   "web",
+   "address"
+  ]
+ },
+ {
+  "id": "local-dns",
+  "title": "Domain Name System",
+  "url": "https://en.wikipedia.org/wiki/Domain_Name_System",
+  "snippet": "DNS translates human-readable domain names into the network addresses computers use to connect.",
+  "body": "When you open a site, a resolver looks up records for the domain and returns an IP address or another referral. DNS is distributed and heavily cached, but it is usually not encrypted, so a network operator can see domain lookups even when HTTPS protects the page itself. The destination server still learns your IP address. DNS privacy is one layer, not a complete anonymity system.",
+  "section": "How the web works",
+  "tags": [
+   "dns",
+   "network",
+   "privacy",
+   "domain"
+  ]
+ },
+ {
+  "id": "local-browser",
+  "title": "Web browser",
+  "url": "https://en.wikipedia.org/wiki/Web_browser",
+  "snippet": "A web browser requests, renders and runs web content, and mediates a user's access to sites and cookies.",
+  "body": "Browsers combine a networking stack, a rendering engine, a JavaScript runtime and a permission model. Their security boundaries matter because any page can try to exploit a bug or persuade the user to grant access. Private or incognito windows avoid local history and often isolate cookies, but they do not hide traffic from the network or the destination. Sift's browser uses an incognito WebView when that setting is enabled.",
+  "section": "How the web works",
+  "tags": [
+   "browser",
+   "rendering",
+   "security",
+   "privacy"
+  ]
+ },
+ {
+  "id": "local-http",
+  "title": "HTTP",
+  "url": "https://en.wikipedia.org/wiki/HTTP",
+  "snippet": "HTTP is the request-response protocol that browsers and servers use to exchange web resources.",
+  "body": "HTTP defines methods such as GET and POST, status codes, headers and caching rules. It is stateless, so cookies and other mechanisms add continuity across requests. HTTPS wraps HTTP in TLS for confidentiality and integrity in transit. Sift's search providers request structured feeds or JSON over HTTPS rather than scraping full search pages.",
+  "section": "How the web works",
+  "tags": [
+   "http",
+   "network",
+   "headers",
+   "web"
+  ]
+ },
+ {
+  "id": "local-android",
+  "title": "Android (operating system)",
+  "url": "https://en.wikipedia.org/wiki/Android_(operating_system)",
+  "snippet": "Android is a mobile operating system built on a Linux kernel, with apps running in managed sandboxes.",
+  "body": "Android apps declare permissions, run under a per-app user identity and communicate through intents and services. Modern versions add scoped storage, background limits and stronger sandboxing. A search app should request only the access it needs; Sift avoids contacts, location and accounts. In-app web content still runs in a WebView process with its own risks and cookie behavior.",
+  "section": "Computing & security",
+  "tags": [
+   "android",
+   "mobile",
+   "security",
+   "permissions"
+  ]
+ },
+ {
+  "id": "local-linux",
+  "title": "Linux",
+  "url": "https://en.wikipedia.org/wiki/Linux",
+  "snippet": "Linux is an open-source kernel that underpins Android, servers, embedded systems and many desktop distributions.",
+  "body": "The kernel manages processes, memory, filesystems, devices and network interfaces. Android uses a modified Linux kernel and adds its own app runtime, services and permission model. Because the source can be inspected and redistributed, Linux supports many independent products and security reviews. Sift is an Android app, not a Linux desktop application.",
+  "section": "Computing & security",
+  "tags": [
+   "linux",
+   "kernel",
+   "open-source",
+   "android"
+  ]
+ },
+ {
+  "id": "local-open-source",
+  "title": "Open-source software",
+  "url": "https://en.wikipedia.org/wiki/Open-source_software",
+  "snippet": "Open-source software is distributed with source code that others may inspect, modify and redistribute under a license.",
+  "body": "An open-source license grants rights that proprietary licenses usually reserve, such as studying and modifying the code. Openness enables independent review and long-term maintenance, but it does not guarantee quality or security. A project's license, governance and release process matter as much as the label. Sift is designed to be inspectable, with no hidden analytics service.",
+  "section": "Computing & security",
+  "tags": [
+   "open-source",
+   "license",
+   "software",
+   "security"
+  ]
+ },
+ {
+  "id": "local-public-key-cryptography",
+  "title": "Public-key cryptography",
+  "url": "https://en.wikipedia.org/wiki/Public-key_cryptography",
+  "snippet": "Public-key cryptography uses a key pair so parties can encrypt, verify or establish secrets without sharing one private key.",
+  "body": "In a key pair, the public key can be shared while the private key stays secret. The mathematics supports encryption, digital signatures and key agreement, and it is the basis of TLS certificates and secure messaging. Key management is often the hard part: a stolen private key defeats the design. Sift relies on the platform's TLS stack for network traffic and does not implement its own cryptography.",
+  "section": "Computing & security",
+  "tags": [
+   "cryptography",
+   "keys",
+   "tls",
+   "security"
+  ]
+ },
+ {
+  "id": "local-vpn",
+  "title": "Virtual private network",
+  "url": "https://en.wikipedia.org/wiki/Virtual_private_network",
+  "snippet": "A VPN creates an encrypted tunnel between a device and a server, changing how traffic reaches the internet.",
+  "body": "A VPN hides your traffic from the local network and makes websites see the VPN server's address instead of your own. The VPN operator can still observe metadata and sometimes content, so trust shifts rather than disappears. VPNs do not block cookies or fingerprinting, and many mobile VPN apps collect telemetry. Sift supports an HTTP proxy setting but does not bundle a VPN service.",
+  "section": "Computing & security",
+  "tags": [
+   "vpn",
+   "privacy",
+   "network",
+   "proxy"
+  ]
+ },
+ {
+  "id": "local-proxy-server",
+  "title": "Proxy server",
+  "url": "https://en.wikipedia.org/wiki/Proxy_server",
+  "snippet": "A proxy server forwards requests between a client and another server, often adding caching, filtering or address translation.",
+  "body": "An HTTP proxy receives a request, connects to the destination and relays the response. Proxies can be used for corporate filtering, caching, measurement or privacy, and they see the destinations a client requests. A local proxy such as Orbot can route traffic through Tor. Sift applies the configured proxy to both its search requests and its WebView through the platform proxy controller.",
+  "section": "Computing & security",
+  "tags": [
+   "proxy",
+   "network",
+   "privacy",
+   "orbot"
+  ]
+ },
+ {
+  "id": "local-password-manager",
+  "title": "Password manager",
+  "url": "https://en.wikipedia.org/wiki/Password_manager",
+  "snippet": "A password manager stores and generates credentials behind a master secret instead of relying on reuse.",
+  "body": "Password managers reduce credential reuse by generating unique passwords and filling them for the correct site. The main risks are phishing pages that capture a password, a compromised master password and weak recovery design. Good managers use platform keystores, encryption at rest and clear lock behavior. Sift does not ask for or store website passwords.",
+  "section": "Computing & security",
+  "tags": [
+   "password",
+   "security",
+   "credentials",
+   "encryption"
+  ]
+ },
+ {
+  "id": "local-encryption",
+  "title": "Encryption",
+  "url": "https://en.wikipedia.org/wiki/Encryption",
+  "snippet": "Encryption transforms readable data into ciphertext that can only be reversed with the right key.",
+  "body": "Modern encryption uses published algorithms and secret keys rather than secret algorithms. Symmetric encryption is fast and handles bulk data; public-key methods help establish and exchange keys. Encryption protects confidentiality but not availability, and it cannot help if an endpoint or key is compromised. Search traffic is protected by TLS; what happens after a server receives a query remains a separate policy question.",
+  "section": "Computing & security",
+  "tags": [
+   "encryption",
+   "cryptography",
+   "security",
+   "tls"
+  ]
+ },
+ {
+  "id": "local-scientific-method",
+  "title": "Scientific method",
+  "url": "https://en.wikipedia.org/wiki/Scientific_method",
+  "snippet": "The scientific method is a disciplined cycle of observation, hypothesis, prediction, testing and revision.",
+  "body": "Science advances by making claims that can be tested against evidence and by inviting others to reproduce the work. A single study is rarely decisive; systematic reviews and independent replication carry more weight. Uncertainty is normally expressed with ranges, confidence levels and limitations rather than hidden. When reading a surprising claim, check the study design, sample and whether other researchers agree.",
+  "section": "Science & nature",
+  "tags": [
+   "science",
+   "evidence",
+   "research",
+   "method"
+  ]
+ },
+ {
+  "id": "local-climate-change",
+  "title": "Climate change",
+  "url": "https://en.wikipedia.org/wiki/Climate_change",
+  "snippet": "Climate change is the long-term shift in global and regional climate, driven mainly by greenhouse gas emissions.",
+  "body": "Burning fossil fuels and changing land use add carbon dioxide and other greenhouse gases to the atmosphere. These gases slow the escape of heat, warming the surface and altering rainfall, ice, oceans and extreme weather. The effects differ by region and fall unevenly on communities. Responses combine emissions reduction, adaptation and repair of past damage.",
+  "section": "Science & nature",
+  "tags": [
+   "climate",
+   "warming",
+   "carbon",
+   "environment"
+  ]
+ },
+ {
+  "id": "local-photosynthesis",
+  "title": "Photosynthesis",
+  "url": "https://en.wikipedia.org/wiki/Photosynthesis",
+  "snippet": "Photosynthesis uses light energy to turn carbon dioxide and water into sugars, releasing oxygen.",
+  "body": "Plants, algae and some bacteria capture light with pigments and use it to drive chemical reactions. The light-dependent stage produces energy carriers, while the Calvin cycle fixes carbon into organic molecules. Photosynthesis supplies most food chains and much of the oxygen in the atmosphere. Its rate depends on light, water, temperature and nutrient availability.",
+  "section": "Science & nature",
+  "tags": [
+   "plants",
+   "biology",
+   "carbon",
+   "oxygen"
+  ]
+ },
+ {
+  "id": "local-solar-system",
+  "title": "Solar System",
+  "url": "https://en.wikipedia.org/wiki/Solar_System",
+  "snippet": "The Solar System is the Sun and the bodies bound to it, including planets, moons, asteroids and comets.",
+  "body": "The Sun contains almost all of the system's mass. Four rocky planets orbit closer in, followed by two gas giants and two ice giants, with smaller bodies throughout. Distances are enormous, which is why light takes hours to reach the outer planets. Space missions and telescopes continue to refine the picture of how the system formed and changed.",
+  "section": "Science & nature",
+  "tags": [
+   "space",
+   "astronomy",
+   "planets",
+   "sun"
+  ]
+ },
+ {
+  "id": "local-plate-tectonics",
+  "title": "Plate tectonics",
+  "url": "https://en.wikipedia.org/wiki/Plate_tectonics",
+  "snippet": "Plate tectonics describes the movement of large slabs of Earth's lithosphere over the mantle.",
+  "body": "Earth's outer shell is broken into plates that move slowly relative to one another. Their interactions build mountains, open ocean basins, cause earthquakes and feed volcanoes. The theory unified earlier observations of matching coastlines, fossils and seafloor magnetism. Hazards near plate boundaries remain difficult to predict in exact time and place.",
+  "section": "Science & nature",
+  "tags": [
+   "earth",
+   "geology",
+   "earthquakes",
+   "science"
+  ]
+ },
+ {
+  "id": "local-biodiversity",
+  "title": "Biodiversity",
+  "url": "https://en.wikipedia.org/wiki/Biodiversity",
+  "snippet": "Biodiversity is the variety of life at genetic, species and ecosystem levels.",
+  "body": "Biodiversity includes differences within species as well as the number and arrangement of species and habitats. It supports ecosystem functions such as pollination, water filtration and soil formation. Habitat loss, climate change, pollution and overexploitation reduce it. Conservation works better when it protects connected habitats and includes the people who depend on them.",
+  "section": "Science & nature",
+  "tags": [
+   "biology",
+   "nature",
+   "conservation",
+   "ecology"
+  ]
+ },
+ {
+  "id": "local-water-cycle",
+  "title": "Water cycle",
+  "url": "https://en.wikipedia.org/wiki/Water_cycle",
+  "snippet": "The water cycle moves water between oceans, atmosphere, land, ice and living things through evaporation, condensation and flow.",
+  "body": "Solar energy evaporates water, plants release vapor, and cooling air forms clouds and precipitation. Water then moves through rivers, groundwater, soil and ice, sometimes for long periods. Human withdrawals and land changes alter the timing and quality of these flows. The cycle is a useful reminder that water is shared and finite at local scales.",
+  "section": "Science & nature",
+  "tags": [
+   "water",
+   "environment",
+   "climate",
+   "earth"
+  ]
+ },
+ {
+  "id": "local-gravity",
+  "title": "Gravity",
+  "url": "https://en.wikipedia.org/wiki/Gravity",
+  "snippet": "Gravity is the attraction between masses, and in general relativity it is described as curvature of spacetime.",
+  "body": "Newton's law gives an accurate approximation for most everyday motion, while Einstein's general relativity explains strong gravity and precise timing effects. Gravity keeps planets in orbit, forms stars and galaxies, and bends light. Gravititational waves, predicted by relativity, have been detected from merging compact objects. Its weakness compared with other forces remains an open research question.",
+  "section": "Science & nature",
+  "tags": [
+   "physics",
+   "space",
+   "relativity",
+   "science"
+  ]
+ },
+ {
+  "id": "local-sleep",
+  "title": "Sleep",
+  "url": "https://en.wikipedia.org/wiki/Sleep",
+  "snippet": "Sleep is a reversible state of reduced awareness that supports memory, immune function and physical recovery.",
+  "body": "Sleep cycles through stages that differ in brain activity, eye movement and muscle tone. Most adults need roughly seven to nine hours, though needs vary. Consistent timing, light exposure and a cool dark room help many people; persistent insomnia or breathing problems deserve clinical attention. Sleep debt is not fully repaired by one long weekend nap.",
+  "section": "Health & body",
+  "tags": [
+   "sleep",
+   "health",
+   "rest",
+   "circadian"
+  ]
+ },
+ {
+  "id": "local-nutrition",
+  "title": "Human nutrition",
+  "url": "https://en.wikipedia.org/wiki/Human_nutrition",
+  "snippet": "Human nutrition is the study of the nutrients people need and how diet supports health and growth.",
+  "body": "The body needs energy, amino acids, fatty acids, vitamins, minerals and water. Dietary patterns matter more than single nutrients: vegetables, fruit, whole grains, legumes and varied proteins are associated with better outcomes. Requirements change across age, pregnancy, illness and activity. Nutrition advice should account for accessibility, culture and medical conditions.",
+  "section": "Health & body",
+  "tags": [
+   "nutrition",
+   "diet",
+   "health",
+   "food"
+  ]
+ },
+ {
+  "id": "local-exercise",
+  "title": "Physical exercise",
+  "url": "https://en.wikipedia.org/wiki/Exercise",
+  "snippet": "Physical exercise is planned movement that improves or maintains fitness, strength and health.",
+  "body": "Regular activity supports cardiovascular health, muscles, bones, mood and metabolic function. Guidelines usually combine aerobic movement with strength work and mobility. Some activity is generally better than none, and intensity should match the person's health and experience. Pain, chest symptoms or unusual breathlessness during exercise are reasons to seek medical advice.",
+  "section": "Health & body",
+  "tags": [
+   "exercise",
+   "health",
+   "fitness",
+   "movement"
+  ]
+ },
+ {
+  "id": "local-mental-health",
+  "title": "Mental health",
+  "url": "https://en.wikipedia.org/wiki/Mental_health",
+  "snippet": "Mental health is a person's emotional, psychological and social well-being, not merely the absence of illness.",
+  "body": "Mental health exists on a spectrum and is shaped by biology, relationships, work, housing, money and trauma. Effective treatments include therapy, medication and social support, often together. Crisis and persistent distress need professional care, not a search result alone. Reducing stigma and improving access are public-health problems, not just individual ones.",
+  "section": "Health & body",
+  "tags": [
+   "mental",
+   "health",
+   "wellbeing",
+   "support"
+  ]
+ },
+ {
+  "id": "local-antibiotic",
+  "title": "Antibiotic",
+  "url": "https://en.wikipedia.org/wiki/Antibiotic",
+  "snippet": "An antibiotic is a medicine that kills or stops bacteria, and it does not treat viral infections.",
+  "body": "Antibiotics are specific to bacterial infections and vary widely in spectrum and side effects. Using them when they are not needed accelerates resistance and can harm the person taking them. A full prescribed course may be important depending on the infection and drug. Anyone with a severe reaction, difficulty breathing or persistent symptoms needs urgent medical care.",
+  "section": "Health & body",
+  "tags": [
+   "antibiotic",
+   "medicine",
+   "health",
+   "resistance"
+  ]
+ },
+ {
+  "id": "local-immune-system",
+  "title": "Immune system",
+  "url": "https://en.wikipedia.org/wiki/Immune_system",
+  "snippet": "The immune system is a network of cells and processes that protects the body from harmful organisms and damage.",
+  "body": "Innate immunity responds quickly and broadly, while adaptive immunity builds targeted memory after exposure or vaccination. Vaccines expose the system to a safe marker so it can respond faster later. Immune responses can also cause allergy or autoimmune disease when regulation goes wrong. No supplement can simply 'boost' the whole system into better health.",
+  "section": "Health & body",
+  "tags": [
+   "immune",
+   "vaccines",
+   "health",
+   "biology"
+  ]
+ },
+ {
+  "id": "local-vaccination",
+  "title": "Vaccination",
+  "url": "https://en.wikipedia.org/wiki/Vaccination",
+  "snippet": "Vaccination trains the immune system with a safe antigen so it can respond quickly to a real pathogen.",
+  "body": "Vaccines reduce the risk of severe illness and can lower transmission when coverage is high. They go through staged trials and ongoing safety monitoring; serious side effects are rare but are taken seriously. People with certain immune conditions may need medical advice about specific vaccines. Herd immunity protects some people who cannot be vaccinated.",
+  "section": "Health & body",
+  "tags": [
+   "vaccines",
+   "health",
+   "immunity",
+   "public health"
+  ]
+ },
+ {
+  "id": "local-air-pollution",
+  "title": "Air pollution",
+  "url": "https://en.wikipedia.org/wiki/Air_pollution",
+  "snippet": "Air pollution is the presence of harmful gases and particles in the air, with effects on health and climate.",
+  "body": "Major sources include burning fossil fuels, industry, agriculture and indoor cooking. Fine particles can reach deep into the lungs and enter the bloodstream, worsening heart and lung disease. Ventilation and filtration reduce indoor exposure; outdoor action requires transport, energy and land-use changes. Air quality indices are guides, not personal medical measurements.",
+  "section": "Health & body",
+  "tags": [
+   "air",
+   "pollution",
+   "health",
+   "environment"
+  ]
+ },
+ {
+  "id": "local-inflation",
+  "title": "Inflation",
+  "url": "https://en.wikipedia.org/wiki/Inflation",
+  "snippet": "Inflation is a sustained rise in the general price level, which reduces the purchasing power of money.",
+  "body": "Inflation is measured by tracking a basket of goods and services, although every household experiences a different mix. It can be driven by demand, supply shocks, wages, expectations and money conditions. Central banks often raise interest rates to slow it, which can also slow hiring and investment. Real returns subtract inflation from nominal returns.",
+  "section": "Money & work",
+  "tags": [
+   "inflation",
+   "money",
+   "prices",
+   "economy"
+  ]
+ },
+ {
+  "id": "local-compound-interest",
+  "title": "Compound interest",
+  "url": "https://en.wikipedia.org/wiki/Compound_interest",
+  "snippet": "Compound interest adds interest to the principal, so future interest can be earned on past interest.",
+  "body": "With a fixed annual rate compounded over time, a balance grows faster than a simple-interest calculation suggests. The effect is powerful over long periods, but it also works against borrowers carrying high-interest debt. Fees, taxes and variable rates can change the outcome. An online calculator is an estimate, not a promise of returns.",
+  "section": "Money & work",
+  "tags": [
+   "interest",
+   "savings",
+   "investing",
+   "money"
+  ]
+ },
+ {
+  "id": "local-index-fund",
+  "title": "Index fund",
+  "url": "https://en.wikipedia.org/wiki/Index_fund",
+  "snippet": "An index fund is a portfolio designed to track a market index rather than beat it through active selection.",
+  "body": "Index funds usually hold the components of an index, or a representative sample, at low cost. They offer broad diversification and transparent rules, but they still fall when the market falls and can carry tracking or concentration risk. Fees look small annually but compound over decades. An index fund is not a guaranteed savings product.",
+  "section": "Money & work",
+  "tags": [
+   "investing",
+   "fund",
+   "money",
+   "diversification"
+  ]
+ },
+ {
+  "id": "local-budget",
+  "title": "Budget",
+  "url": "https://en.wikipedia.org/wiki/Budget",
+  "snippet": "A budget is a plan for income, spending, saving and debt over a period of time.",
+  "body": "A useful budget starts with actual cash flow rather than an idealized one. Recurring costs, irregular expenses, taxes and debt payments belong in the plan. Categories can be simple; the point is to see trade-offs early and create room for goals and emergencies. A budget that is never reviewed is just a spreadsheet.",
+  "section": "Money & work",
+  "tags": [
+   "budget",
+   "money",
+   "savings",
+   "planning"
+  ]
+ },
+ {
+  "id": "local-insurance",
+  "title": "Insurance",
+  "url": "https://en.wikipedia.org/wiki/Insurance",
+  "snippet": "Insurance pools risk so many people contribute to cover large, uncertain losses for the few who experience them.",
+  "body": "An insurance policy trades a known premium for protection against a defined event. The important parts are what is covered, what is excluded, the deductible, the limit and the claim process. Insurance works best for losses that would be financially severe, not for small predictable costs. Compare the policy language, not just the headline price.",
+  "section": "Money & work",
+  "tags": [
+   "insurance",
+   "risk",
+   "money",
+   "protection"
+  ]
+ },
+ {
+  "id": "local-central-bank",
+  "title": "Central bank",
+  "url": "https://en.wikipedia.org/wiki/Central_bank",
+  "snippet": "A central bank manages a currency, monetary policy and often the stability of the banking system.",
+  "body": "Central banks set policy interest rates, supply reserves and supervise parts of the financial system. Their mandates vary, but many target inflation while supporting employment and financial stability. They do not control the government budget and cannot make an economy productive by printing money alone. Independence and credibility shape how markets respond to them.",
+  "section": "Money & work",
+  "tags": [
+   "banking",
+   "money",
+   "inflation",
+   "policy"
+  ]
+ },
+ {
+  "id": "local-supply-and-demand",
+  "title": "Supply and demand",
+  "url": "https://en.wikipedia.org/wiki/Supply_and_demand",
+  "snippet": "Supply and demand describes how prices and quantities adjust when buyers and sellers interact in a market.",
+  "body": "Demand generally falls as price rises, while supply generally rises, though real markets include frictions, power and expectations. A shift in either curve changes the equilibrium price and quantity. Taxes, subsidies, price controls and monopolies complicate the simple model. It is a starting framework, not a complete description of every market.",
+  "section": "Money & work",
+  "tags": [
+   "economics",
+   "markets",
+   "prices",
+   "money"
+  ]
+ },
+ {
+  "id": "local-opportunity-cost",
+  "title": "Opportunity cost",
+  "url": "https://en.wikipedia.org/wiki/Opportunity_cost",
+  "snippet": "Opportunity cost is the value of the best alternative given up when a choice is made.",
+  "body": "Every decision uses time, money or attention that cannot be used elsewhere. Good analysis includes the alternatives, not just the visible price tag of one option. Sunk costs are different: money already spent should not drive a new decision unless it changes future outcomes. Opportunity cost is why 'free' services still deserve scrutiny.",
+  "section": "Money & work",
+  "tags": [
+   "economics",
+   "decisions",
+   "money",
+   "cost"
+  ]
+ },
+ {
+  "id": "local-dictionary",
+  "title": "Dictionary",
+  "url": "https://en.wikipedia.org/wiki/Dictionary",
+  "snippet": "A dictionary lists words with meanings, pronunciations and usage information, usually in alphabetical order.",
+  "body": "Dictionaries are descriptions of how words are used, shaped by editorial choices and evidence. A word can have several senses, registers and regional variants, so one definition is rarely the whole story. Bilingual dictionaries add translation choices that depend on context. Sift's dictionary answer uses dictionaryapi.dev and links to Wiktionary for fuller coverage.",
+  "section": "Language & reference",
+  "tags": [
+   "dictionary",
+   "words",
+   "meaning",
+   "language"
+  ]
+ },
+ {
+  "id": "local-etymology",
+  "title": "Etymology",
+  "url": "https://en.wikipedia.org/wiki/Etymology",
+  "snippet": "Etymology is the study of the origin and historical development of words.",
+  "body": "Etymologies trace a word's form and meaning through earlier languages, borrowing and semantic change. They are hypotheses supported by written evidence, not stories invented to fit a modern meaning. False etymologies spread easily because they sound satisfying. A good dictionary marks uncertain or disputed origins.",
+  "section": "Language & reference",
+  "tags": [
+   "etymology",
+   "words",
+   "history",
+   "language"
+  ]
+ },
+ {
+  "id": "local-grammar",
+  "title": "Grammar",
+  "url": "https://en.wikipedia.org/wiki/Grammar",
+  "snippet": "Grammar is the system of rules and patterns that structures words into meaningful sentences in a language.",
+  "body": "Every language has systematic patterns, but the rules taught in school are only part of the picture. Grammars describe morphology, syntax, agreement and usage across speech and writing. Different varieties can be equally systematic while differing in social prestige. Clear writing often depends more on structure and audience than on memorized prohibitions.",
+  "section": "Language & reference",
+  "tags": [
+   "grammar",
+   "language",
+   "writing",
+   "linguistics"
+  ]
+ },
+ {
+  "id": "local-phonetics",
+  "title": "Phonetics",
+  "url": "https://en.wikipedia.org/wiki/Phonetics",
+  "snippet": "Phonetics studies the physical sounds of speech: how they are produced, transmitted and perceived.",
+  "body": "Phonetics describes articulation in the mouth, the acoustic properties of sound and how listeners categorize it. The International Phonetic Alphabet gives a shared notation for sounds across languages. Phonetics differs from phonology, which studies how a language organizes sounds. Dictionary transcriptions are simplified guides, not complete acoustic descriptions.",
+  "section": "Language & reference",
+  "tags": [
+   "phonetics",
+   "pronunciation",
+   "speech",
+   "language"
+  ]
+ },
+ {
+  "id": "local-library-classification",
+  "title": "Library classification",
+  "url": "https://en.wikipedia.org/wiki/Library_classification",
+  "snippet": "Library classification organizes materials by subject so they can be shelved, found and browsed consistently.",
+  "body": "Schemes such as Dewey Decimal and Library of Congress assign notation to subjects and arrange related works nearby. Classification reflects the assumptions of its creators and must be revised as fields change. A call number is a location tool, not a judgment about quality. Sift's starter shelf uses plain sections instead of a formal library scheme.",
+  "section": "Language & reference",
+  "tags": [
+   "library",
+   "classification",
+   "reference",
+   "organization"
+  ]
+ },
+ {
+  "id": "local-citation",
+  "title": "Citation",
+  "url": "https://en.wikipedia.org/wiki/Citation",
+  "snippet": "A citation identifies a source so a reader can verify a claim and locate the original material.",
+  "body": "Citations typically include author, title, publisher or container, date and a locator such as a page or DOI. Styles differ, but the purpose is constant: traceability. A citation does not certify that a source is correct; it shows what was relied on. When a claim matters, open the source and check the context.",
+  "section": "Language & reference",
+  "tags": [
+   "citation",
+   "sources",
+   "research",
+   "writing"
+  ]
+ },
+ {
+  "id": "local-public-domain",
+  "title": "Public domain",
+  "url": "https://en.wikipedia.org/wiki/Public_domain",
+  "snippet": "The public domain consists of works and knowledge not protected by intellectual property rights.",
+  "body": "Works can enter the public domain when copyright expires, when protection is waived, or when a category was never eligible. Laws differ by country, and a work may be public in one place but restricted in another. Public-domain status does not remove attribution norms or moral rights in every jurisdiction. It is a legal status, not a synonym for 'free to use without care'.",
+  "section": "Language & reference",
+  "tags": [
+   "public domain",
+   "copyright",
+   "law",
+   "creative"
+  ]
+ },
+ {
+  "id": "local-thesaurus",
+  "title": "Thesaurus",
+  "url": "https://en.wikipedia.org/wiki/Thesaurus",
+  "snippet": "A thesaurus groups words by related meaning, helping writers choose among near-synonyms.",
+  "body": "A thesaurus is not a drop-in replacement engine: near-synonyms differ in register, implication and grammatical behavior. A word that fits one sentence can be wrong in another. Good usage comes from seeing examples, not just swapping labels. Sift's local search applies a small synonym map for retrieval, not for rewriting text.",
+  "section": "Language & reference",
+  "tags": [
+   "thesaurus",
+   "synonyms",
+   "writing",
+   "language"
+  ]
+ },
+ {
+  "id": "local-freedom-of-information",
+  "title": "Freedom of information",
+  "url": "https://en.wikipedia.org/wiki/Freedom_of_information",
+  "snippet": "Freedom of information laws give the public a right to request records held by public bodies, subject to defined exemptions.",
+  "body": "A request usually identifies the records sought rather than asking a broad question, and agencies respond within a statutory period. Exemptions protect things such as personal privacy, national security or ongoing investigations, though many can be appealed. Fees and delays are common practical barriers. The right is a tool for accountability, not a guarantee of a quick answer.",
+  "section": "Law, media & society",
+  "tags": [
+   "information",
+   "law",
+   "government",
+   "rights"
+  ]
+ },
+ {
+  "id": "local-gdpr",
+  "title": "General Data Protection Regulation",
+  "url": "https://en.wikipedia.org/wiki/General_Data_Protection_Regulation",
+  "snippet": "The GDPR is a European Union regulation governing how personal data is collected, used and transferred.",
+  "body": "It requires lawful bases, purpose limitation, data minimization and transparency, and it gives people rights such as access, correction and erasure. Organizations outside the EU can be covered when they offer goods or monitor people in the EU. Enforcement is shared among national authorities and can be slow. Privacy-by-design is one of its explicit principles.",
+  "section": "Law, media & society",
+  "tags": [
+   "gdpr",
+   "privacy",
+   "law",
+   "data"
+  ]
+ },
+ {
+  "id": "local-right-to-privacy",
+  "title": "Right to privacy",
+  "url": "https://en.wikipedia.org/wiki/Right_to_privacy",
+  "snippet": "The right to privacy protects people from unjustified intrusion into their personal life, home, communications and data.",
+  "body": "Privacy is recognized in many constitutions and human-rights instruments, but its boundaries are contested. Courts balance it against security, speech, public interest and commercial needs, and the outcome varies by jurisdiction. Digital privacy adds questions about metadata, location and automated inference. A legal right does not automatically provide a technical shield.",
+  "section": "Law, media & society",
+  "tags": [
+   "privacy",
+   "rights",
+   "law",
+   "surveillance"
+  ]
+ },
+ {
+  "id": "local-consumer-protection",
+  "title": "Consumer protection",
+  "url": "https://en.wikipedia.org/wiki/Consumer_protection",
+  "snippet": "Consumer protection laws set baseline rights for buyers of goods and services, including safety, disclosure and redress.",
+  "body": "Rules vary by country and cover misleading advertising, unfair contract terms, refunds, product safety and data. Enforcement may come from regulators, courts or ombudsmen. A privacy policy that contradicts the law does not override it, and 'free' services still involve consumer relationships. Keep records and read the actual terms when a dispute is likely.",
+  "section": "Law, media & society",
+  "tags": [
+   "consumer",
+   "law",
+   "rights",
+   "protection"
+  ]
+ },
+ {
+  "id": "local-net-neutrality",
+  "title": "Net neutrality",
+  "url": "https://en.wikipedia.org/wiki/Net_neutrality",
+  "snippet": "Net neutrality is the principle that network providers should treat internet traffic without unreasonable discrimination.",
+  "body": "Supporters argue that equal treatment protects competition, expression and innovation; opponents argue that some traffic management is necessary for security and congestion. Rules differ by country and have changed through regulation and litigation. Zero-rating and paid prioritization are common flashpoints. The debate is about the balance of power in internet access, not only technical routing.",
+  "section": "Law, media & society",
+  "tags": [
+   "net neutrality",
+   "internet",
+   "policy",
+   "access"
+  ]
+ },
+ {
+  "id": "local-open-access",
+  "title": "Open access",
+  "url": "https://en.wikipedia.org/wiki/Open_access",
+  "snippet": "Open access publishes research so readers can access it without a subscription, often with a reuse license.",
+  "body": "Open access can be delivered through journals, repositories or self-archiving, and not every version is equally reusable. Fees may move from readers to authors, which can create inequities. Preprints speed sharing but are not always peer reviewed. Check the license and version before treating a paper as final.",
+  "section": "Law, media & society",
+  "tags": [
+   "research",
+   "access",
+   "publishing",
+   "science"
+  ]
+ },
+ {
+  "id": "local-media-literacy",
+  "title": "Media literacy",
+  "url": "https://en.wikipedia.org/wiki/Media_literacy",
+  "snippet": "Media literacy is the ability to access, analyze, evaluate and create messages across different media.",
+  "body": "It includes understanding who made a message, for whom, with what evidence and what may be missing. Useful habits include opening the original source, checking the date, comparing independent coverage and noticing emotionally manipulative framing. A polished page is not evidence of accuracy. Search results are inputs to judgment, not substitutes for it.",
+  "section": "Law, media & society",
+  "tags": [
+   "media",
+   "literacy",
+   "misinformation",
+   "sources"
+  ]
+ },
+ {
+  "id": "local-copyright",
+  "title": "Copyright",
+  "url": "https://en.wikipedia.org/wiki/Copyright",
+  "snippet": "Copyright grants creators exclusive rights over original expression for a limited time, subject to exceptions.",
+  "body": "Copyright usually protects the expression of an idea, not the idea itself, and the duration and exceptions depend on jurisdiction. Fair use or fair dealing can permit limited reuse, but the test is fact-specific. Licenses can grant broader permissions than default law. Always check the license on an image or text before republishing it.",
+  "section": "Law, media & society",
+  "tags": [
+   "copyright",
+   "law",
+   "license",
+   "creative"
+  ]
+ }
+]
