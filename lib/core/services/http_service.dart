@@ -174,9 +174,9 @@ class SiftHttp implements SiftHttpBase {
       }
 
       final charset = response.headers.contentType?.charset?.toLowerCase();
-      final encoding = charset == 'iso-8859-1'
+      final Encoding encoding = charset == 'iso-8859-1'
           ? latin1
-          : const Utf8Decoder(allowMalformed: true);
+          : const Utf8Codec(allowMalformed: true);
       return encoding.decode(chunks);
     } on SiftHttpException {
       rethrow;
