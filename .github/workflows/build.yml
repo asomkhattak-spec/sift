@@ -98,6 +98,38 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  screenshots:
+    name: Render UI screenshots
+    if: github.event_name == 'workflow_dispatch'
+    needs: apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.5"
+          channel: stable
+          cache: true
+
+      - name: Resolve Dart packages
+        run: flutter pub get
+
+      - name: Render screens
+        run: |
+          flutter test --update-goldens test/visual/render_screens.dart
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: sift-screenshots
+          path: test/visual/goldens
+          if-no-files-found: error
+          retention-days: 30
+
   release:
     name: Publish tagged release
     if: startsWith(github.ref, 'refs/tags/v')
