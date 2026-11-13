@@ -216,7 +216,9 @@ pub fn expand_terms(
                 continue;
             }
             for (candidate, distance) in fuzzy_terms(term, vocabulary, 4, document_frequency) {
-                let weight = if distance == 1 { 0.78 } else { 0.66 };
+                // Typo matches are a safety net for a misspelled single word,
+                // not evidence that a document is about the query.
+                let weight = if distance == 1 { 0.55 } else { 0.4 };
                 put(&mut weights, candidate, weight, "typo");
             }
         }
@@ -232,6 +234,10 @@ pub fn expand_terms(
             .then_with(|| a.term.cmp(&b.term))
     });
     out
+}
+
+fn shares_prefix(a: &str, b: &str, count: usize) -> bool {
+    a.chars().take(count).eq(b.chars().take(count))
 }
 
 /// Edit candidates restricted by length and bounded distance. Sorting prefers
@@ -255,6 +261,12 @@ pub fn fuzzy_terms(
         if candidate.starts_with(term) || term.starts_with(candidate.as_str()) {
             // Prefix variants are handled by stemming or are a different word;
             // do not spend a typo slot on them here.
+            continue;
+        }
+        // A typo should not turn one word into an unrelated word. Requiring the
+        // first two characters to agree keeps "privicy" -> "privacy" while
+        // rejecting "rust" -> "rest".
+        if !shares_prefix(term, candidate, 2) {
             continue;
         }
         let Some(distance) = edit_distance_bounded(term, candidate, max_distance) else {

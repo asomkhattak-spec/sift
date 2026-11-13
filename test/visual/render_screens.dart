@@ -8,6 +8,8 @@
 // `screenshots` job in the build workflow.
 
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -118,6 +120,21 @@ Future<void> _loadFonts() async {
       loader.addFont(rootBundle.load(path));
     }
     await loader.load();
+  }
+
+  // The icon font ships inside the Flutter SDK but is not part of the app's
+  // asset bundle, so widget-test renders draw empty boxes without this.
+  final flutterRoot = Platform.environment['FLUTTER_ROOT'];
+  if (flutterRoot != null) {
+    final iconFile = File(
+      '$flutterRoot/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+    );
+    if (await iconFile.exists()) {
+      final bytes = await iconFile.readAsBytes();
+      final icons = FontLoader('MaterialIcons')
+        ..addFont(Future.value(ByteData.sublistView(bytes)));
+      await icons.load();
+    }
   }
 }
 

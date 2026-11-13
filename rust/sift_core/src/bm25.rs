@@ -318,6 +318,14 @@ impl LocalIndex {
                     / base_count
             };
 
+            // A multi-word query must share at least one exact term with the
+            // page. Otherwise a synonym or typo expansion can surface an
+            // unrelated document (for example "rust programming" matching a
+            // sleep article through "rest").
+            if base_terms.len() > 1 && all_coverage == 0.0 {
+                continue;
+            }
+
             score += 5.5 * all_coverage;
             if title_coverage >= 0.999 {
                 score += 3.2;
@@ -465,6 +473,25 @@ mod tests {
         index.replace(docs());
         let response = index.search("anonymity settings", &options());
         assert_eq!(response.hits.first().map(|hit| hit.id.as_str()), Some("privacy"));
+    }
+
+    #[test]
+    fn multi_word_queries_need_an_exact_term() {
+        let mut documents = docs();
+        documents.push(Document {
+            id: "rest".into(),
+            title: "Sleep, rest and recovery".into(),
+            url: "https://example.com/sleep".into(),
+            body: "Rest is when the body repairs itself. Take a rest day.".into(),
+            section: "Health".into(),
+            tags: vec!["sleep".into(), "rest".into()],
+            ..Default::default()
+        });
+        let mut index = LocalIndex::new();
+        index.replace(documents);
+        let response = index.search("rust programming", &options());
+        assert_eq!(response.hits.first().map(|hit| hit.id.as_str()), Some("rust"));
+        assert!(response.hits.iter().all(|hit| hit.id != "rest"));
     }
 
     #[test]

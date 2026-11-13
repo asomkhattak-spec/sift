@@ -222,7 +222,7 @@ class LocalIndex extends ChangeNotifier {
       if (!_vocabulary.contains(term)) {
         for (final candidate in _nearbyTerms(term)) {
           final current = weights[candidate] ?? 0;
-          if (current < 0.78) weights[candidate] = 0.78;
+          if (current < 0.55) weights[candidate] = 0.55;
         }
       }
     }
@@ -245,14 +245,15 @@ class LocalIndex extends ChangeNotifier {
       }
       if (score <= 0) continue;
 
+      final exactHits =
+          mustTerms.where(item.uniqueTerms.contains).length;
+      if (mustTerms.length > 1 && exactHits == 0) continue;
+
       final title = item.normalizedTitle;
       final body = item.normalizedBody;
       if (title.contains(normalizedQuery)) score += 8.5;
       if (body.contains(normalizedQuery)) score += 2.4;
-      final titleTerms = item.titleTerms;
-      final coverage = mustTerms.where((term) =>
-          titleTerms.contains(term) || item.uniqueTerms.contains(term)).length /
-          mustTerms.length;
+      final coverage = exactHits / mustTerms.length;
       score += coverage * 5.5;
       if (coverage < 0.45) score *= 0.65;
       if (item.document.title.length < 8) score -= 0.8;
@@ -360,6 +361,7 @@ class LocalIndex extends ChangeNotifier {
     for (final candidate in _vocabulary) {
       if (candidate.length < 3) continue;
       if (candidate[0] != term[0]) continue;
+      if (candidate[1] != term[1]) continue;
       if ((candidate.length - term.length).abs() > 1) continue;
       if (!_withinOneEdit(term, candidate)) continue;
       yield candidate;
