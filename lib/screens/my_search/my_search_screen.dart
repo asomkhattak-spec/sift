@@ -293,26 +293,15 @@ class MySearchScreenState extends State<MySearchScreen> {
               ],
             ),
             const SizedBox(height: 15),
-            Row(
-              children: [
-                SiftButton(
-                  label: 'Index a page',
-                  icon: Icons.add_link_rounded,
-                  compact: true,
-                  busy: _indexing,
-                  onPressed: _indexing ? null : _addPage,
-                ),
-                const Spacer(),
-                Text(
-                  _services.settings.starterIndexEnabled
-                      ? 'Shelf on'
-                      : 'Shelf off',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: p.faint,
-                        fontSize: 8.5,
-                      ),
-                ),
-              ],
+            Align(
+              alignment: Alignment.centerLeft,
+              child: SiftButton(
+                label: 'Index a page',
+                icon: Icons.add_link_rounded,
+                compact: true,
+                busy: _indexing,
+                onPressed: _indexing ? null : _addPage,
+              ),
             ),
             const SizedBox(height: 24),
             const SiftRule(),

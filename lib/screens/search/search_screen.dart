@@ -1129,17 +1129,6 @@ class _Landing extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 10),
-        Text(
-          controller.text.isEmpty
-              ? 'Tip: long-press any result for save, share, and on-device indexing.'
-              : '',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: p.faint,
-                fontSize: 8.5,
-                letterSpacing: 0.1,
-              ),
-        ),
       ],
     );
   }
