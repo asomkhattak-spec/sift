@@ -95,6 +95,10 @@ class SearchEngine {
         ? _answers
             .resolve(query, allowNetwork: !localOnly)
             .catchError((Object _) => null)
+            .timeout(
+              const Duration(seconds: 4),
+              onTimeout: () => null,
+            )
         : Future<InstantAnswer?>.value(null);
 
     await Future.wait(tasks.map((task) async {

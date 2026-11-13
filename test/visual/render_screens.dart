@@ -183,7 +183,7 @@ void main() {
 
     await tester.tap(find.text('Search'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
     await expectLater(
       find.byType(MaterialApp),

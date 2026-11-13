@@ -101,7 +101,6 @@ jobs:
   screenshots:
     name: Render UI screenshots
     if: github.event_name == 'workflow_dispatch'
-    needs: apk
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
