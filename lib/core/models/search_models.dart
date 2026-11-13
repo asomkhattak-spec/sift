@@ -239,6 +239,7 @@ class SearchBundle {
     required this.elapsedMs,
     this.answer,
     this.nextPage = 0,
+    this.complete = true,
   });
 
   final String query;
@@ -248,6 +249,10 @@ class SearchBundle {
   final int elapsedMs;
   final InstantAnswer? answer;
   final int nextPage;
+
+  /// False while providers are still answering; the UI can keep a subtle
+  /// "gathering" indicator instead of blocking on the slowest source.
+  final bool complete;
 
   List<SearchResult> get all => groups[SearchVertical.all] ?? const [];
   List<SearchResult> get web => groups[SearchVertical.web] ?? const [];

@@ -17,12 +17,18 @@ native library is unavailable.
 
 **Search**
 
+- The on-device index answers first: Sift Local results paint immediately,
+  before any web source replies.
 - One search field across six verticals: All, Web, Images, News, Videos and
   Discussions.
+- An **On-device only** toggle (also in Settings → Search) that sends no query
+  to any web source and uses only the local index plus locally computed
+  answers.
 - Meta-search across Bing web results, Wikipedia, Google News, Openverse,
   Dailymotion, Hacker News and Stack Exchange.
-- Parallel provider calls with per-source timeouts, so one slow source does not
-  hold up the page.
+- Parallel provider calls that stream in progressively with a 6-second
+  per-source cap, so the first source to answer paints the page instead of the
+  slowest one holding it up.
 - On-device fusion and ranking: exact-title and phrase boosts, term coverage,
   source priors, recency for news, host diversity and URL deduplication.
 - A source panel that shows which providers answered, how long each took and
@@ -38,7 +44,8 @@ native library is unavailable.
 
 **My Search**
 
-- A private full-text index stored on the phone.
+- A private full-text index stored on the phone that answers before the web and
+  is the whole engine in **On-device only** mode.
 - 64 curated reference pages across privacy, security, web architecture,
   search, typography, climate, health and learning.
 - Add any page you are reading. Sift extracts the readable text, stores it in
@@ -184,6 +191,16 @@ base64 -w0 sift-release.jks > sift-release.jks.b64
 
 Then add the four secrets in the repository settings. Never commit the
 keystore or its passwords.
+
+## Why Sift is not a web-scale crawler
+
+A genuinely independent web index needs crawlers, storage and machines that do
+not fit on a phone, and building one would also mean operating a server that
+sees every query — the opposite of the goal here. Instead Sift ships a real
+search engine that fits the device: a Rust BM25 index over the curated shelf
+and every page the reader chooses to keep. That engine is the default and, with
+**On-device only** enabled, the only engine that runs. Web sources are opt-in
+additions, not the product.
 
 ## Sources
 

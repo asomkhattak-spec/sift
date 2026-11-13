@@ -12,7 +12,7 @@ class InstantAnswerEngine {
 
   final SiftHttpBase _http;
 
-  Future<InstantAnswer?> resolve(String raw) async {
+  Future<InstantAnswer?> resolve(String raw, {bool allowNetwork = true}) async {
     final query = normalizeQuery(raw);
     if (query.isEmpty) return null;
 
@@ -22,6 +22,7 @@ class InstantAnswerEngine {
     final conversion = _parseConversion(query);
     if (conversion != null) {
       if (conversion.isCurrency) {
+        if (!allowNetwork) return null;
         try {
           return await _convertCurrency(conversion);
         } catch (_) {
@@ -30,6 +31,8 @@ class InstantAnswerEngine {
       }
       return _convertUnit(conversion);
     }
+
+    if (!allowNetwork) return null;
 
     final city = _weatherCity(query);
     if (city != null) {

@@ -25,6 +25,10 @@ your IP address.
 Sift does not attach a name, email address, account, or advertising ID. It
 does not operate a server that receives your queries.
 
+Sift's own search engine runs on the phone: the curated shelf and any pages you
+add are indexed locally and answer first. An **On-device only** setting makes
+that engine the only one used, so no query leaves the device at all.
+
 ## Network anonymity
 
 Sift filters a conservative list of known advertising and analytics hosts in

@@ -39,6 +39,7 @@ class SearchScreenState extends State<SearchScreen> {
   String? _error;
   bool _loading = false;
   bool _loadingMore = false;
+  bool _fetching = false;
   bool _shelfLoaded = false;
   int _requestToken = 0;
   int _suggestionToken = 0;
@@ -52,6 +53,10 @@ class SearchScreenState extends State<SearchScreen> {
     _controller.addListener(_onTextChanged);
     _focus.addListener(_onFocusChanged);
     _loadShelf();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _services.settings.isFirstRun) return;
+      if (_query.isEmpty && _controller.text.isEmpty) _focus.requestFocus();
+    });
   }
 
   @override
@@ -177,7 +182,10 @@ class SearchScreenState extends State<SearchScreen> {
 
     final query = normalizeQuery(value);
     if (query.isEmpty) return;
-    if (query != _query) _cache.clear();
+    if (query != _query) {
+      _cache.clear();
+      _localMatches = const [];
+    }
     _query = query;
     _controller.text = query;
     _controller.selection =
@@ -211,34 +219,47 @@ class SearchScreenState extends State<SearchScreen> {
       resultCount: _services.settings.resultCount,
       language: _services.settings.language,
     );
-    final localFuture = page == 0
-        ? _services.localIndex
-            .search(
-              target,
-              limit: 4,
-              includeStarter: _services.settings.starterIndexEnabled,
-            )
-            .catchError((Object _) => <SearchResult>[])
-        : Future<List<SearchResult>>.value(_localMatches);
+
+    if (page == 0) {
+      setState(() => _fetching = true);
+      _services.localIndex
+          .search(
+            target,
+            limit: 4,
+            includeStarter: _services.settings.starterIndexEnabled,
+          )
+          .then((local) {
+        if (!mounted || token != _requestToken) return;
+        setState(() => _localMatches = local);
+      }).catchError((Object _) {});
+    }
 
     SearchBundle? bundle;
     String? error;
     try {
-      bundle = await _services.engine.search(request);
+      bundle = await _services.engine.search(
+        request,
+        onPartial: (partial) {
+          if (!mounted || token != _requestToken) return;
+          setState(() {
+            _bundle = partial;
+            _loading = false;
+          });
+        },
+      );
     } catch (failure) {
       error = failure.toString();
     }
-    final local = await localFuture;
     if (!mounted || token != _requestToken) return;
 
     if (bundle != null) {
       _cache[vertical] = bundle;
     }
     setState(() {
-      _bundle = bundle;
-      _localMatches = local;
+      if (bundle != null) _bundle = bundle;
       _error = error;
       _loading = false;
+      _fetching = false;
     });
   }
 
@@ -255,6 +276,7 @@ class SearchScreenState extends State<SearchScreen> {
         _bundle = cached;
         _error = null;
         _loading = false;
+        _fetching = false;
       });
       _scrollToTop();
       return;
@@ -325,11 +347,20 @@ class SearchScreenState extends State<SearchScreen> {
               controller: _controller,
               focusNode: _focus,
               onSubmitted: _submit,
+              localOnly: settings.localOnlyMode,
+              onToggleLocalOnly: () {
+                settings.localOnlyMode = !settings.localOnlyMode;
+                if (_hasSearched) {
+                  _cache.clear();
+                  _performSearch(_vertical, query: _query);
+                }
+              },
               onSettings: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
               ),
             ),
-            if (_hasSearched || _controller.text.trim().isNotEmpty)
+            if (!settings.localOnlyMode &&
+                (_hasSearched || _controller.text.trim().isNotEmpty))
               _VerticalTabs(
                 selected: _vertical,
                 bundle: _bundle,
@@ -370,7 +401,7 @@ class SearchScreenState extends State<SearchScreen> {
       );
     }
 
-    if (_loading && _bundle == null) {
+    if (_loading && _bundle == null && _localMatches.isEmpty) {
       return const _SearchLoading();
     }
 
@@ -394,6 +425,35 @@ class SearchScreenState extends State<SearchScreen> {
                       statuses: bundle.statuses,
                       elapsedMs: bundle.elapsedMs,
                       onTap: () => _showSources(bundle),
+                    ),
+                  if (_fetching && bundle != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 11,
+                            height: 11,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 1.2,
+                              color: context.sift.moss,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            bundle.complete
+                                ? 'Up to date'
+                                : 'Gathering more sources…',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  color: context.sift.faint,
+                                  fontSize: 9,
+                                ),
+                          ),
+                        ],
+                      ),
                     ),
                   if (_error != null)
                     Padding(
@@ -427,12 +487,11 @@ class SearchScreenState extends State<SearchScreen> {
                 ),
               ),
             ),
-          if (bundle != null) _resultsSliver(bundle),
           if (_localMatches.isNotEmpty)
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
                 SiftSpace.page,
-                16,
+                10,
                 SiftSpace.page,
                 0,
               ),
@@ -449,6 +508,7 @@ class SearchScreenState extends State<SearchScreen> {
                 ),
               ),
             ),
+          if (bundle != null) _resultsSliver(bundle),
           if (bundle != null &&
               bundle.isEmpty &&
               _localMatches.isEmpty &&
@@ -655,12 +715,16 @@ class _Header extends StatelessWidget {
     required this.controller,
     required this.focusNode,
     required this.onSubmitted,
+    required this.localOnly,
+    required this.onToggleLocalOnly,
     required this.onSettings,
   });
 
   final TextEditingController controller;
   final FocusNode focusNode;
   final ValueChanged<String> onSubmitted;
+  final bool localOnly;
+  final VoidCallback onToggleLocalOnly;
   final VoidCallback onSettings;
 
   @override
@@ -683,15 +747,41 @@ class _Header extends StatelessWidget {
             children: [
               const SiftWordmark(size: 24),
               const SizedBox(width: 9),
-              Container(width: 1, height: 13, color: p.lineStrong),
-              const SizedBox(width: 9),
-              Text(
-                'PRIVATE SEARCH',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: p.faint,
-                      fontSize: 8.5,
-                      letterSpacing: 1.1,
+              InkWell(
+                onTap: onToggleLocalOnly,
+                borderRadius: BorderRadius.circular(SiftRadius.xs),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: localOnly ? p.mossWash : Colors.transparent,
+                    border: Border.all(
+                      color: localOnly ? p.moss : p.line,
                     ),
+                    borderRadius: BorderRadius.circular(SiftRadius.xs),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        localOnly
+                            ? Icons.memory_rounded
+                            : Icons.public_rounded,
+                        size: 12,
+                        color: localOnly ? p.mossDeep : p.faint,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        localOnly ? 'ON-DEVICE' : 'WEB + LOCAL',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: localOnly ? p.mossDeep : p.faint,
+                              fontSize: 8.5,
+                              letterSpacing: 0.8,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const Spacer(),
               SiftIconButton(
@@ -706,7 +796,9 @@ class _Header extends StatelessWidget {
             controller: controller,
             focusNode: focusNode,
             onSubmitted: onSubmitted,
-            hintText: 'Search the web, or type a site',
+            hintText: localOnly
+                ? 'Search your on-device index'
+                : 'Search the web, or type a site',
           ),
         ],
       ),
@@ -890,25 +982,25 @@ class _Landing extends StatelessWidget {
       ),
       children: [
         SiftKicker(greetingFor(now), color: p.clay),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         Text(
-          'What are you\nlooking for?',
+          'What are you looking for?',
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                fontSize: 38,
-                height: 1.03,
-                letterSpacing: -0.7,
+                fontSize: 30,
+                height: 1.08,
+                letterSpacing: -0.5,
               ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         Text(
-          'One question to independent sources. The ranking happens on this '
-          'phone, and the sources stay in view.',
+          'Answers come from the on-device index first, and only from the web '
+          'sources you keep switched on.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: p.muted,
                 height: 1.55,
               ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 22),
         Wrap(
           spacing: 7,
           runSpacing: 7,

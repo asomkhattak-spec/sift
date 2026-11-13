@@ -67,7 +67,10 @@ class SearchEngine {
 
   LocalIndex get localIndex => _local;
 
-  Future<SearchBundle> search(SearchRequest request) async {
+  Future<SearchBundle> search(
+    SearchRequest request, {
+    void Function(SearchBundle)? onPartial,
+  }) async {
     final query = normalizeQuery(request.query);
     final started = Stopwatch()..start();
     if (query.isEmpty) {
@@ -81,14 +84,17 @@ class SearchEngine {
       );
     }
 
-    final tasks = _tasksFor(request);
+    final tasks = _settings.localOnlyMode ? const <_Task>[] : _tasksFor(request);
     final statuses = <ProviderStatus>[];
     final byVertical = <SearchVertical, List<SearchResult>>{};
+    final localOnly = _settings.localOnlyMode;
     final answerFuture = _settings.instantAnswers &&
             (request.vertical == SearchVertical.all ||
                 request.vertical == SearchVertical.web) &&
             request.page == 0
-        ? _answers.resolve(query).catchError((Object _) => null)
+        ? _answers
+            .resolve(query, allowNetwork: !localOnly)
+            .catchError((Object _) => null)
         : Future<InstantAnswer?>.value(null);
 
     await Future.wait(tasks.map((task) async {
@@ -96,7 +102,7 @@ class SearchEngine {
       try {
         final results = await task.provider
             .search(_requestForTask(request, task.vertical, query))
-            .timeout(const Duration(seconds: 16));
+            .timeout(const Duration(seconds: 6));
         stopwatch.stop();
         statuses.add(
           ProviderStatus(
@@ -123,8 +129,42 @@ class SearchEngine {
           ),
         );
       }
+      onPartial?.call(
+        _assemble(
+          request,
+          query,
+          byVertical,
+          statuses,
+          started,
+          tasks: tasks,
+        ),
+      );
     }));
 
+    final answer = await answerFuture;
+    started.stop();
+    return _assemble(
+      request,
+      query,
+      byVertical,
+      statuses,
+      started,
+      answer: answer,
+      tasks: tasks,
+      finalPass: true,
+    );
+  }
+
+  SearchBundle _assemble(
+    SearchRequest request,
+    String query,
+    Map<SearchVertical, List<SearchResult>> byVertical,
+    List<ProviderStatus> statuses,
+    Stopwatch started, {
+    InstantAnswer? answer,
+    required List<_Task> tasks,
+    bool finalPass = false,
+  }) {
     final groups = <SearchVertical, List<SearchResult>>{};
     for (final entry in byVertical.entries) {
       final vertical = entry.key;
@@ -159,23 +199,22 @@ class SearchEngine {
       groups[SearchVertical.all] = groups[request.vertical]!;
     }
 
-    final answer = await answerFuture;
-    statuses.sort((a, b) {
-      if (a.ok != b.ok) return a.ok ? -1 : 1;
-      return a.sourceName.compareTo(b.sourceName);
-    });
+    final sorted = [...statuses]..sort((a, b) {
+        if (a.ok != b.ok) return a.ok ? -1 : 1;
+        return a.sourceName.compareTo(b.sourceName);
+      });
     final canPage = tasks.any((task) => task.provider.supportsPaging) &&
         groups.values.any((results) => results.isNotEmpty) &&
         request.page < 5;
-    started.stop();
     return SearchBundle(
       query: query,
       vertical: request.vertical,
       groups: groups,
-      statuses: statuses,
+      statuses: sorted,
       elapsedMs: started.elapsedMilliseconds,
       answer: answer,
       nextPage: canPage ? request.page + 1 : 0,
+      complete: finalPass,
     );
   }
 

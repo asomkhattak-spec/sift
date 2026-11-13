@@ -41,6 +41,7 @@ class SettingsService extends ChangeNotifier {
   static const _kSources = 'sift.sources';
   static const _kSearxUrl = 'sift.searxUrl';
   static const _kStarterIndexEnabled = 'sift.starterIndex';
+  static const _kLocalOnly = 'sift.localOnly';
   static const _kFirstRun = 'sift.firstRun';
 
   String get themeMode =>
@@ -193,6 +194,16 @@ class SettingsService extends ChangeNotifier {
   }
 
   bool get isFirstRun => _prefs.getBool(_kFirstRun) ?? true;
+
+  /// When true, no query leaves the device: search runs only against the
+  /// on-device index and locally computed instant answers.
+  bool get localOnlyMode => _prefs.getBool(_kLocalOnly) ?? false;
+  set localOnlyMode(bool value) {
+    if (localOnlyMode == value) return;
+    _prefs.setBool(_kLocalOnly, value);
+    notifyListeners();
+  }
+
   Future<void> markOpened() async {
     await _prefs.setBool(_kFirstRun, false);
   }
@@ -253,6 +264,7 @@ class SettingsService extends ChangeNotifier {
         'proxyPort': proxyPort,
         'serifHeadings': serifHeadings,
         'textScale': textScale,
+        'localOnly': localOnlyMode,
         'sources': {
           for (final id in kDefaultEnabledSources)
             id: isSourceEnabled(id),

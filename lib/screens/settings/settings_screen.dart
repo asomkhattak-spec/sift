@@ -182,6 +182,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onChanged: (value) => settings.starterIndexEnabled = value,
               ),
               const SiftRule(),
+              _SwitchSetting(
+                label: 'On-device only',
+                description:
+                    'Send no query to any web source. Search Sift Local and '
+                    'locally computed answers. Instant answers that need the '
+                    'network are skipped.',
+                value: settings.localOnlyMode,
+                onChanged: (value) => settings.localOnlyMode = value,
+              ),
+              const SiftRule(),
               _CountSetting(
                 label: 'Results per page',
                 description:
