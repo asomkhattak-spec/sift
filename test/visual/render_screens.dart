@@ -149,6 +149,16 @@ void main() {
   });
 
   testWidgets('captures the primary screens', (tester) async {
+    final originalOnError = FlutterError.onError;
+    FlutterError.onError = (details) {
+      if (details.library == 'image resource service' ||
+          details.exception.toString().contains('NetworkImageLoadException')) {
+        return;
+      }
+      originalOnError?.call(details);
+    };
+    addTearDown(() => FlutterError.onError = originalOnError);
+
     await tester.binding.setSurfaceSize(const Size(393, 851));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -183,11 +193,25 @@ void main() {
 
     await tester.tap(find.text('Search'));
     await tester.pumpAndSettle();
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+    await tester.enterText(find.byType(TextField), 'rust programming');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+    await expectLater(
+      find.byType(SiftApp),
+      matchesGoldenFile('goldens/05_results.png'),
+    );
+
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
     await expectLater(
       find.byType(MaterialApp),
-      matchesGoldenFile('goldens/05_settings.png'),
+      matchesGoldenFile('goldens/06_settings.png'),
     );
 
     services.native.dispose();
