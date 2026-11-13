@@ -16,6 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sift/app.dart';
 import 'package:sift/core/search/local_index.dart';
 import 'package:sift/core/search/search_engine.dart';
+import 'package:sift/core/services/http_service.dart';
 import 'package:sift/core/services/library_service.dart';
 import 'package:sift/core/services/native_bridge.dart';
 import 'package:sift/core/services/search_bus.dart';
@@ -189,6 +190,6 @@ void main() {
       matchesGoldenFile('goldens/05_settings.png'),
     );
 
-    await services.native.dispose();
+    services.native.dispose();
   });
 }
