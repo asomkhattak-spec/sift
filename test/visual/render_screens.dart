@@ -100,6 +100,11 @@ class _FakeHttp extends SiftHttp {
 
 Future<void> _loadFonts() async {
   final families = <String, List<String>>{
+    'Roboto': [
+      'assets/fonts/Roboto-Regular.ttf',
+      'assets/fonts/Roboto-Medium.ttf',
+      'assets/fonts/Roboto-Bold.ttf',
+    ],
     'Instrument Serif': [
       'assets/fonts/InstrumentSerif-Regular.ttf',
       'assets/fonts/InstrumentSerif-Italic.ttf',

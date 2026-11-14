@@ -13,11 +13,16 @@ import '../../core/utils/text_utils.dart';
 import '../../widgets/result_widgets.dart';
 import '../../widgets/search_bar.dart';
 import '../../widgets/sift_ui.dart';
+import '../settings/privacy_screen.dart';
 import '../settings/settings_screen.dart';
 import '../settings/sources_screen.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  const SearchScreen({super.key, this.onOpenTab});
+
+  /// Switches the root shell to another bottom tab. Used by the home
+  /// shortcuts so they are real navigation rather than decoration.
+  final ValueChanged<int>? onOpenTab;
 
   @override
   State<SearchScreen> createState() => SearchScreenState();
@@ -337,33 +342,49 @@ class SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final settings = _services.settings;
+    final compactHeader = _hasSearched || _showSuggestions;
+    void openSources() {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const SourcesScreen()),
+      );
+    }
+
+    void openPrivacy() {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const PrivacyScreen()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: context.sift.paper,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            _Header(
-              controller: _controller,
-              focusNode: _focus,
-              onSubmitted: _submit,
-              localOnly: settings.localOnlyMode,
-              onToggleLocalOnly: () {
-                settings.localOnlyMode = !settings.localOnlyMode;
-                if (_hasSearched) {
-                  _cache.clear();
-                  _performSearch(_vertical, query: _query);
-                }
-              },
-              onSettings: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              child: _Header(
+                controller: _controller,
+                focusNode: _focus,
+                onSubmitted: _submit,
+                localOnly: settings.localOnlyMode,
+                compact: compactHeader,
+                onSources: openSources,
+                onPrivacy: openPrivacy,
+                onSettings: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const SettingsScreen(),
+                  ),
+                ),
               ),
             ),
-            if (!settings.localOnlyMode &&
-                (_hasSearched || _controller.text.trim().isNotEmpty))
+            if (!_showSuggestions &&
+                !settings.localOnlyMode &&
+                _hasSearched)
               _VerticalTabs(
                 selected: _vertical,
-                bundle: _bundle,
                 onSelect: _selectVertical,
               ),
             Expanded(
@@ -384,15 +405,29 @@ class SearchScreenState extends State<SearchScreen> {
 
   Widget _buildBody(bool rememberActivity) {
     if (!_hasSearched) {
+      final settings = _services.settings;
       return _Landing(
         key: const ValueKey('landing'),
-        controller: _controller,
         shelf: _shelf,
         shelfLoaded: _shelfLoaded,
         recent: rememberActivity
             ? _services.library.recentQueries(limit: 4)
             : const [],
+        localOnly: settings.localOnlyMode,
         onQuery: _submit,
+        onToggleLocalOnly: () {
+          settings.localOnlyMode = !settings.localOnlyMode;
+          if (settings.localOnlyMode && _vertical != SearchVertical.all) {
+            _vertical = SearchVertical.all;
+          }
+        },
+        onOpenSources: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const SourcesScreen()),
+        ),
+        onOpenTab: widget.onOpenTab,
+        onOpenPrivacy: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const PrivacyScreen()),
+        ),
         onOpenDoc: (document) => openSiftUrl(
           context,
           document.url,
@@ -565,7 +600,7 @@ class SearchScreenState extends State<SearchScreen> {
       return SliverPadding(
         padding: const EdgeInsets.fromLTRB(
           SiftSpace.page,
-          10,
+          8,
           SiftSpace.page,
           0,
         ),
@@ -578,7 +613,7 @@ class SearchScreenState extends State<SearchScreen> {
                     : 2,
             crossAxisSpacing: 10,
             mainAxisSpacing: 16,
-            childAspectRatio: 0.7,
+            childAspectRatio: 0.68,
           ),
           delegate: SliverChildBuilderDelegate(
             (context, index) {
@@ -635,33 +670,26 @@ class SearchScreenState extends State<SearchScreen> {
         padding: const EdgeInsets.symmetric(horizontal: SiftSpace.page),
         sliver: SliverList(
           delegate: SliverChildListDelegate([
-            const SizedBox(height: 4),
-            SiftSectionHead(
-              kicker: '${primary.length} ranked on device',
-              title: 'Top results',
-              bottomPadding: 2,
-            ),
-            for (var index = 0; index < primary.length; index++) ...[
-              if (index > 0) const SiftRule(),
-              tileFor(primary[index]),
-            ],
+            const SizedBox(height: 6),
+            for (final result in primary) tileFor(result),
             if (images.isNotEmpty) ...[
-              const SizedBox(height: 22),
+              const SizedBox(height: 20),
               SiftSectionHead(
-                kicker: 'Openverse and the web',
                 title: 'Images',
+                action: 'See all',
+                onAction: () => _selectVertical(SearchVertical.images),
                 bottomPadding: 10,
               ),
               SizedBox(
-                height: 176,
+                height: 152,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: images.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
                   itemBuilder: (context, index) {
                     final result = images[index];
                     return SizedBox(
-                      width: 138,
+                      width: 132,
                       child: ImageResultTile(
                         result: result,
                         onTap: () => showImagePreview(context, result),
@@ -677,25 +705,16 @@ class SearchScreenState extends State<SearchScreen> {
       );
     }
 
-    final title = _vertical.pluralTitle;
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: SiftSpace.page),
       sliver: SliverList(
         delegate: SliverChildListDelegate([
-          const SizedBox(height: 4),
-          SiftSectionHead(
-            kicker: '${results.length} from ${bundle.statuses.where((s) => s.ok).length} sources',
-            title: title,
-            bottomPadding: 2,
-          ),
-          for (var index = 0; index < results.length; index++) ...[
-            if (index > 0) const SiftRule(),
+          const SizedBox(height: 6),
+          for (var index = 0; index < results.length; index++)
             tileFor(
               results[index],
-              lead: index == 0 &&
-                  _vertical == SearchVertical.news,
+              lead: index == 0 && _vertical == SearchVertical.news,
             ),
-          ],
           const SizedBox(height: 18),
         ]),
       ),
@@ -716,7 +735,9 @@ class _Header extends StatelessWidget {
     required this.focusNode,
     required this.onSubmitted,
     required this.localOnly,
-    required this.onToggleLocalOnly,
+    required this.compact,
+    required this.onSources,
+    required this.onPrivacy,
     required this.onSettings,
   });
 
@@ -724,81 +745,98 @@ class _Header extends StatelessWidget {
   final FocusNode focusNode;
   final ValueChanged<String> onSubmitted;
   final bool localOnly;
-  final VoidCallback onToggleLocalOnly;
+  final bool compact;
+  final VoidCallback onSources;
+  final VoidCallback onPrivacy;
   final VoidCallback onSettings;
 
   @override
   Widget build(BuildContext context) {
     final p = context.sift;
+    final modeHint = localOnly
+        ? 'Search your on-device index'
+        : 'Search the web, or type a site';
     return Container(
-      padding: const EdgeInsets.fromLTRB(
+      color: p.paper,
+      padding: EdgeInsets.fromLTRB(
         SiftSpace.page,
-        8,
+        compact ? 4 : 6,
         SiftSpace.page,
-        8,
-      ),
-      decoration: BoxDecoration(
-        color: p.paper,
-        border: Border(bottom: BorderSide(color: p.line)),
+        compact ? 8 : 6,
       ),
       child: Column(
         children: [
-          Row(
-            children: [
-              const SiftWordmark(size: 24),
-              const SizedBox(width: 9),
-              InkWell(
-                onTap: onToggleLocalOnly,
-                borderRadius: BorderRadius.circular(SiftRadius.xs),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: localOnly ? p.mossWash : Colors.transparent,
-                    border: Border.all(
-                      color: localOnly ? p.moss : p.line,
+          if (compact)
+            SizedBox(
+              height: 42,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: SiftCircleAction(
+                      icon: Icons.shield_outlined,
+                      tooltip: 'Privacy controls',
+                      onPressed: onPrivacy,
+                      size: 38,
+                      iconSize: 19,
                     ),
-                    borderRadius: BorderRadius.circular(SiftRadius.xs),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        localOnly
-                            ? Icons.memory_rounded
-                            : Icons.public_rounded,
-                        size: 12,
-                        color: localOnly ? p.mossDeep : p.faint,
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        localOnly ? 'ON-DEVICE' : 'WEB + LOCAL',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: localOnly ? p.mossDeep : p.faint,
-                              fontSize: 8.5,
-                              letterSpacing: 0.8,
-                            ),
-                      ),
-                    ],
+                  const SiftWordmark(size: 27),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: SiftCircleAction(
+                      icon: Icons.settings_outlined,
+                      tooltip: 'Settings',
+                      onPressed: onSettings,
+                      size: 38,
+                      iconSize: 19,
+                    ),
                   ),
+                ],
+              ),
+            )
+          else ...[
+            Row(
+              children: [
+                Icon(Icons.lock_outline_rounded, size: 15, color: p.faint),
+                const SizedBox(width: 6),
+                Text(
+                  'No ads · No account',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: p.muted,
+                        fontSize: 12,
+                      ),
                 ),
-              ),
-              const Spacer(),
-              SiftIconButton(
-                icon: Icons.tune_rounded,
-                tooltip: 'Settings',
-                onPressed: onSettings,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
+                const Spacer(),
+                SiftCircleAction(
+                  icon: Icons.shield_outlined,
+                  tooltip: 'Privacy controls',
+                  onPressed: onPrivacy,
+                  size: 38,
+                  iconSize: 19,
+                ),
+                const SizedBox(width: 2),
+                SiftCircleAction(
+                  icon: Icons.settings_outlined,
+                  tooltip: 'Settings',
+                  onPressed: onSettings,
+                  size: 38,
+                  iconSize: 19,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Center(child: SiftWordmark(size: 62)),
+            const SizedBox(height: 18),
+          ],
           SiftSearchBar(
             controller: controller,
             focusNode: focusNode,
             onSubmitted: onSubmitted,
-            hintText: localOnly
-                ? 'Search your on-device index'
-                : 'Search the web, or type a site',
+            onSources: onSources,
+            compact: compact,
+            hintText: modeHint,
           ),
         ],
       ),
@@ -809,32 +847,113 @@ class _Header extends StatelessWidget {
 class _VerticalTabs extends StatelessWidget {
   const _VerticalTabs({
     required this.selected,
-    required this.bundle,
     required this.onSelect,
   });
 
   final SearchVertical selected;
-  final SearchBundle? bundle;
   final ValueChanged<SearchVertical> onSelect;
+
+  static const _order = <SearchVertical>[
+    SearchVertical.all,
+    SearchVertical.images,
+    SearchVertical.videos,
+    SearchVertical.news,
+    SearchVertical.discuss,
+    SearchVertical.web,
+  ];
+
+  IconData _iconFor(SearchVertical vertical) => switch (vertical) {
+        SearchVertical.all => Icons.search_rounded,
+        SearchVertical.web => Icons.language_rounded,
+        SearchVertical.images => Icons.image_outlined,
+        SearchVertical.news => Icons.article_outlined,
+        SearchVertical.videos => Icons.play_circle_outline_rounded,
+        SearchVertical.discuss => Icons.forum_outlined,
+      };
 
   @override
   Widget build(BuildContext context) {
     final p = context.sift;
     return Container(
-      color: p.paper,
-      padding: const EdgeInsets.only(left: SiftSpace.page, right: 6),
+      decoration: BoxDecoration(
+        color: p.paper,
+        border: Border(bottom: BorderSide(color: p.line)),
+      ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.only(left: 4, right: 8),
         child: Row(
           children: [
-            for (final vertical in SearchVertical.values)
-              SiftFilterTab(
+            for (final vertical in _order)
+              _ResultTab(
                 label: vertical.label,
+                icon: _iconFor(vertical),
                 selected: vertical == selected,
-                count: bundle?.forVertical(vertical).length,
                 onTap: () => onSelect(vertical),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ResultTab extends StatelessWidget {
+  const _ResultTab({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.sift;
+    final color = selected ? p.mossDeep : p.muted;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '$label results',
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 10),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 17, color: color),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: color,
+                          fontSize: 13,
+                          fontWeight:
+                              selected ? FontWeight.w500 : FontWeight.w400,
+                        ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 9),
+              Container(
+                height: 3,
+                width: selected ? 36 : 0,
+                decoration: BoxDecoration(
+                  color: p.moss,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -854,43 +973,40 @@ class _SuggestionPanel extends StatelessWidget {
   final ValueChanged<String> onSelect;
   final VoidCallback onDismiss;
 
+  IconData _iconFor(QuerySuggestion suggestion) => switch (suggestion.kind) {
+        SuggestionKind.history => Icons.history_rounded,
+        SuggestionKind.local => Icons.memory_rounded,
+        SuggestionKind.web => Icons.search_rounded,
+      };
+
   @override
   Widget build(BuildContext context) {
     final p = context.sift;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        SiftSpace.page,
-        16,
-        SiftSpace.page,
-        24,
-      ),
+      padding: const EdgeInsets.only(bottom: 28),
       children: [
-        Row(
-          children: [
-            const Expanded(child: SiftKicker('Suggestions')),
-            SiftTextAction(label: 'Close', onTap: onDismiss),
-          ],
-        ),
-        const SizedBox(height: 8),
         for (final suggestion in suggestions)
           InkWell(
             onTap: () => onSelect(suggestion.text),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 13),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: SiftSpace.page),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: p.line)),
+              ),
               child: Row(
                 children: [
-                  Icon(
-                    switch (suggestion.kind) {
-                      SuggestionKind.history => Icons.history_rounded,
-                      SuggestionKind.local => Icons.storage_outlined,
-                      SuggestionKind.web => Icons.search_rounded,
-                    },
-                    size: 17,
-                    color: suggestion.kind == SuggestionKind.web
-                        ? p.faint
-                        : p.moss,
+                  SizedBox(
+                    width: 24,
+                    child: Icon(
+                      _iconFor(suggestion),
+                      size: 18,
+                      color: suggestion.kind == SuggestionKind.local
+                          ? p.moss
+                          : p.faint,
+                    ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       suggestion.text,
@@ -898,46 +1014,57 @@ class _SuggestionPanel extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color: p.ink,
-                            fontSize: 15,
+                            fontSize: 16,
+                            height: 1.3,
                           ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  if (suggestion.kind != SuggestionKind.web)
-                    SiftBadge(
-                      suggestion.kind == SuggestionKind.history
-                          ? 'History'
-                          : 'On device',
-                      color: p.mossDeep,
-                      background: p.mossWash,
-                    ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   Icon(
                     Icons.north_west_rounded,
-                    size: 14,
-                    color: p.faint,
+                    size: 15,
+                    color: p.faint.withOpacity(0.75),
                   ),
                 ],
               ),
             ),
           ),
-        const SiftRule(),
         InkWell(
           onTap: () => onSelect(query),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 15),
+            padding: const EdgeInsets.fromLTRB(
+              SiftSpace.page,
+              16,
+              SiftSpace.page,
+              16,
+            ),
             child: Row(
               children: [
-                Icon(Icons.arrow_forward_rounded, size: 17, color: p.clay),
-                const SizedBox(width: 12),
+                Icon(Icons.search_rounded, size: 20, color: p.moss),
+                const SizedBox(width: 13),
                 Expanded(
                   child: Text(
                     'Search for “$query”',
-                    style: Theme.of(context).textTheme.titleSmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: p.ink,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                        ),
                   ),
                 ),
               ],
             ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Center(
+          child: SiftTextAction(
+            label: 'Close suggestions',
+            icon: null,
+            onTap: onDismiss,
+            color: p.muted,
           ),
         ),
       ],
@@ -947,26 +1074,33 @@ class _SuggestionPanel extends StatelessWidget {
 
 class _Landing extends StatelessWidget {
   const _Landing({
-    required this.controller,
     required this.shelf,
     required this.shelfLoaded,
     required this.recent,
+    required this.localOnly,
     required this.onQuery,
+    required this.onToggleLocalOnly,
+    required this.onOpenSources,
+    required this.onOpenTab,
+    required this.onOpenPrivacy,
     required this.onOpenDoc,
     super.key,
   });
 
-  final TextEditingController controller;
   final List<LocalDocument> shelf;
   final bool shelfLoaded;
   final List<HistoryEntry> recent;
+  final bool localOnly;
   final ValueChanged<String> onQuery;
+  final VoidCallback onToggleLocalOnly;
+  final VoidCallback onOpenSources;
+  final ValueChanged<int>? onOpenTab;
+  final VoidCallback onOpenPrivacy;
   final ValueChanged<LocalDocument> onOpenDoc;
 
   @override
   Widget build(BuildContext context) {
     final p = context.sift;
-    final now = DateTime.now();
     const starters = [
       'Rust ownership',
       'How does a heat pump work?',
@@ -976,46 +1110,156 @@ class _Landing extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         SiftSpace.page,
-        22,
+        12,
         SiftSpace.page,
-        30,
+        28,
       ),
       children: [
-        SiftKicker(greetingFor(now), color: p.clay),
-        const SizedBox(height: 10),
-        Text(
-          'What are you looking for?',
-          style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                fontSize: 30,
-                height: 1.08,
-                letterSpacing: -0.5,
-              ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          'Answers come from the on-device index first, and only from the web '
-          'sources you keep switched on.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: p.muted,
-                height: 1.55,
-              ),
-        ),
-        const SizedBox(height: 22),
         Wrap(
-          spacing: 7,
-          runSpacing: 7,
-          children: const [
-            _TrustChip(icon: Icons.block_outlined, label: 'No ads'),
-            _TrustChip(icon: Icons.person_off_outlined, label: 'No account'),
-            _TrustChip(icon: Icons.tune_rounded, label: 'You choose sources'),
+          alignment: WrapAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            SiftPillChip(
+              label: localOnly ? 'On-device' : 'Web + local',
+              icon: localOnly ? Icons.memory_rounded : Icons.public_rounded,
+              selected: localOnly,
+              onTap: onToggleLocalOnly,
+            ),
+            SiftPillChip(
+              label: 'Sources',
+              icon: Icons.tune_rounded,
+              onTap: onOpenSources,
+            ),
           ],
         ),
-        const SizedBox(height: 30),
-        SiftSectionHead(
-          kicker: 'Try one',
-          title: 'Start somewhere',
-          bottomPadding: 10,
+        if (onOpenTab != null) ...[
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+            decoration: BoxDecoration(
+              color: p.surface,
+              border: Border.all(color: p.line),
+              borderRadius: BorderRadius.circular(SiftRadius.lg),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: SiftShortcut(
+                    icon: Icons.manage_search_rounded,
+                    label: 'My Search',
+                    color: p.moss,
+                    onTap: () => onOpenTab!(2),
+                  ),
+                ),
+                Expanded(
+                  child: SiftShortcut(
+                    icon: Icons.explore_outlined,
+                    label: 'Discover',
+                    color: SiftPalette.wordmarkGreen,
+                    onTap: () => onOpenTab!(1),
+                  ),
+                ),
+                Expanded(
+                  child: SiftShortcut(
+                    icon: Icons.bookmarks_outlined,
+                    label: 'Library',
+                    color: p.clay,
+                    onTap: () => onOpenTab!(3),
+                  ),
+                ),
+                Expanded(
+                  child: SiftShortcut(
+                    icon: Icons.shield_outlined,
+                    label: 'Privacy',
+                    color: const Color(0xFFF9AB00),
+                    onTap: onOpenPrivacy,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
+        Material(
+          color: p.surface,
+          borderRadius: BorderRadius.circular(SiftRadius.lg),
+          child: InkWell(
+            onTap: onOpenPrivacy,
+            borderRadius: BorderRadius.circular(SiftRadius.lg),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(15, 15, 11, 15),
+              decoration: BoxDecoration(
+                border: Border.all(color: p.line),
+                borderRadius: BorderRadius.circular(SiftRadius.lg),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: p.mossWash,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.verified_user_outlined,
+                      size: 21,
+                      color: p.moss,
+                    ),
+                  ),
+                  const SizedBox(width: 13),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Private by default',
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    color: p.ink,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'No account, no ad server. Only the sources you keep '
+                          'switched on ever see a query.',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: p.muted,
+                                    fontSize: 12.5,
+                                    height: 1.45,
+                                  ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      size: 20,
+                      color: p.faint,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
+        const SizedBox(height: 24),
+        Text(
+          'Try a search',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: p.ink,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+        ),
+        const SizedBox(height: 10),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -1025,47 +1269,104 @@ class _Landing extends StatelessWidget {
           ],
         ),
         if (recent.isNotEmpty) ...[
-          const SizedBox(height: 28),
-          const SiftSectionHead(
-            kicker: 'Only on this device',
-            title: 'Recent searches',
-            bottomPadding: 4,
+          const SizedBox(height: 26),
+          Row(
+            children: [
+              Text(
+                'Recent',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: p.ink,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+              const Spacer(),
+              Icon(Icons.lock_outline_rounded, size: 13, color: p.faint),
+              const SizedBox(width: 4),
+              Text(
+                'Only on this device',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: p.faint,
+                      fontSize: 11,
+                    ),
+              ),
+            ],
           ),
-          for (final entry in recent)
-            InkWell(
-              onTap: () => onQuery(entry.query),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 11),
-                child: Row(
-                  children: [
-                    Icon(Icons.history_rounded, size: 15, color: p.faint),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        entry.query,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: p.inkSoft,
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: p.surface,
+              border: Border.all(color: p.line),
+              borderRadius: BorderRadius.circular(SiftRadius.lg),
+            ),
+            child: Column(
+              children: [
+                for (var index = 0; index < recent.length; index++) ...[
+                  if (index > 0)
+                    Divider(height: 1, thickness: 0.6, color: p.line),
+                  InkWell(
+                    onTap: () => onQuery(recent[index].query),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 13,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.history_rounded,
+                            size: 18,
+                            color: p.faint,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              recent[index].query,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: p.ink,
+                                    fontSize: 14,
+                                  ),
                             ),
+                          ),
+                          Icon(
+                            Icons.north_west_rounded,
+                            size: 14,
+                            color: p.faint,
+                          ),
+                        ],
                       ),
                     ),
-                    Icon(
-                      Icons.north_west_rounded,
-                      size: 13,
-                      color: p.faint,
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                ],
+              ],
             ),
+          ),
         ],
-        const SizedBox(height: 28),
-        SiftSectionHead(
-          kicker: 'A curated shelf, not a crawl',
-          title: 'From My Search',
-          bottomPadding: 10,
+        const SizedBox(height: 26),
+        Row(
+          children: [
+            Text(
+              'From My Search',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: p.ink,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+            const Spacer(),
+            if (onOpenTab != null)
+              SiftTextAction(
+                label: 'See all',
+                onTap: () => onOpenTab!(2),
+              ),
+          ],
         ),
+        const SizedBox(height: 10),
         if (!shelfLoaded)
           const SizedBox(
             height: 130,
@@ -1078,17 +1379,24 @@ class _Landing extends StatelessWidget {
             ),
           )
         else if (shelf.isEmpty)
-          Text(
-            'The local shelf is empty. Open My Search to add pages you want '
-            'to keep and search on this device.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: p.muted,
-                  height: 1.55,
-                ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: p.surfaceRaised,
+              borderRadius: BorderRadius.circular(SiftRadius.lg),
+            ),
+            child: Text(
+              'Your local shelf is empty. Add pages in My Search to keep them '
+              'indexed and searchable on this phone.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: p.muted,
+                    height: 1.55,
+                  ),
+            ),
           )
         else
           SizedBox(
-            height: 142,
+            height: 160,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: shelf.length,
@@ -1102,69 +1410,27 @@ class _Landing extends StatelessWidget {
               },
             ),
           ),
-        const SizedBox(height: 30),
-        Container(
-          padding: const EdgeInsets.only(top: 14),
-          decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: p.line)),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.lock_outline_rounded, size: 13, color: p.faint),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Queries go from this phone to the sources you enable. There '
-                  'is no Sift account and no ad server in the middle. Network '
-                  'anonymity still needs a VPN or proxy you trust.',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: p.faint,
-                        height: 1.55,
-                        fontSize: 8.5,
-                        letterSpacing: 0.2,
-                      ),
-                ),
+        const SizedBox(height: 28),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.lock_outline_rounded, size: 13, color: p.faint),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Queries travel from this phone to the sources you enable. Sift '
+                'has no account and no ad server in the middle. Network '
+                'anonymity still needs a VPN or proxy you trust.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: p.faint,
+                      height: 1.55,
+                      fontSize: 11,
+                    ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
-    );
-  }
-}
-
-class _TrustChip extends StatelessWidget {
-  const _TrustChip({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.sift;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      decoration: BoxDecoration(
-        color: p.surface,
-        border: Border.all(color: p.line),
-        borderRadius: BorderRadius.circular(SiftRadius.xs),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 11, color: p.moss),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: p.muted,
-                  fontSize: 8.5,
-                  letterSpacing: 0.2,
-                ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -1179,29 +1445,29 @@ class _QueryChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.sift;
     return Material(
-      color: p.surface,
-      borderRadius: BorderRadius.circular(SiftRadius.sm),
+      color: p.surfaceRaised,
+      borderRadius: BorderRadius.circular(SiftRadius.pill),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(SiftRadius.sm),
+        borderRadius: BorderRadius.circular(SiftRadius.pill),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(11, 8, 10, 8),
+          padding: const EdgeInsets.fromLTRB(12, 9, 13, 9),
           decoration: BoxDecoration(
-            border: Border.all(color: p.lineStrong),
-            borderRadius: BorderRadius.circular(SiftRadius.sm),
+            border: Border.all(color: p.line),
+            borderRadius: BorderRadius.circular(SiftRadius.pill),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Icon(Icons.search_rounded, size: 15, color: p.muted),
+              const SizedBox(width: 7),
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: p.inkSoft,
-                      fontSize: 12,
+                      fontSize: 12.5,
                     ),
               ),
-              const SizedBox(width: 7),
-              Icon(Icons.arrow_outward_rounded, size: 12, color: p.clay),
             ],
           ),
         ),
@@ -1220,18 +1486,18 @@ class _ShelfCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.sift;
     return SizedBox(
-      width: 204,
+      width: 236,
       child: Material(
         color: p.surface,
-        borderRadius: BorderRadius.circular(SiftRadius.md),
+        borderRadius: BorderRadius.circular(SiftRadius.lg),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(SiftRadius.md),
+          borderRadius: BorderRadius.circular(SiftRadius.lg),
           child: Container(
-            padding: const EdgeInsets.all(13),
+            padding: const EdgeInsets.fromLTRB(14, 13, 14, 12),
             decoration: BoxDecoration(
-              border: Border.all(color: p.lineStrong),
-              borderRadius: BorderRadius.circular(SiftRadius.md),
+              border: Border.all(color: p.line),
+              borderRadius: BorderRadius.circular(SiftRadius.lg),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1241,36 +1507,57 @@ class _ShelfCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: p.clay,
-                        fontSize: 8,
-                        letterSpacing: 0.8,
+                        color: p.mossDeep,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.7,
                       ),
                 ),
                 const SizedBox(height: 7),
+                Text(
+                  document.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: p.ink,
+                        fontSize: 14,
+                        height: 1.3,
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+                const SizedBox(height: 5),
                 Expanded(
                   child: Text(
-                    document.title,
-                    maxLines: 3,
+                    document.snippet,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontSize: 13.5,
-                          height: 1.3,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: p.muted,
+                          fontSize: 11.5,
+                          height: 1.4,
                         ),
                   ),
                 ),
+                const SizedBox(height: 6),
                 Row(
                   children: [
+                    Icon(
+                      Icons.memory_rounded,
+                      size: 13,
+                      color: p.faint,
+                    ),
+                    const SizedBox(width: 5),
                     Text(
-                      'Reference',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      'On-device',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: p.faint,
-                            fontSize: 8,
+                            fontSize: 10.5,
                           ),
                     ),
                     const Spacer(),
                     Icon(
-                      Icons.north_east_rounded,
-                      size: 12,
+                      Icons.arrow_forward_rounded,
+                      size: 15,
                       color: p.moss,
                     ),
                   ],
@@ -1293,7 +1580,7 @@ class _SearchLoading extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         SiftSpace.page,
-        16,
+        18,
         SiftSpace.page,
         20,
       ),
@@ -1301,25 +1588,24 @@ class _SearchLoading extends StatelessWidget {
         Row(
           children: [
             SizedBox(
-              width: 13,
-              height: 13,
+              width: 14,
+              height: 14,
               child: CircularProgressIndicator(
-                strokeWidth: 1.3,
+                strokeWidth: 1.5,
                 color: p.moss,
               ),
             ),
-            const SizedBox(width: 9),
+            const SizedBox(width: 10),
             Text(
-              'ASKING THE SOURCES',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              'Searching the sources you chose…',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: p.muted,
-                    fontSize: 9,
-                    letterSpacing: 1,
+                    fontSize: 12.5,
                   ),
             ),
           ],
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 20),
         const SiftSkeletonRows(rows: 4),
       ],
     );
@@ -1341,89 +1627,111 @@ class _LocalMatches extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.sift;
     return Container(
-      margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 4),
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.fromLTRB(14, 13, 8, 4),
       decoration: BoxDecoration(
-        color: p.mossWash,
-        border: Border.all(color: p.moss.withOpacity(0.22)),
-        borderRadius: BorderRadius.circular(SiftRadius.md),
+        color: p.surface,
+        border: Border.all(color: p.line),
+        borderRadius: BorderRadius.circular(SiftRadius.lg),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: SiftKicker(
-                  'On this device',
-                  color: p.mossDeep,
-                  trailing: SiftBadge(
-                    'My Search',
-                    color: p.mossDeep,
-                    background: p.surface.withOpacity(0.55),
+          Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: p.mossWash,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.memory_rounded,
+                    size: 16,
+                    color: p.moss,
                   ),
                 ),
-              ),
-              Text(
-                '${matches.length}',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: p.mossDeep,
-                      fontSize: 8.5,
-                    ),
-              ),
-            ],
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    'From your device',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: p.ink,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                ),
+                SiftBadge(
+                  'My Search',
+                  color: p.mossDeep,
+                  background: p.mossWash,
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 4),
-          for (final match in matches)
+          for (var index = 0; index < matches.length; index++) ...[
+            if (index > 0)
+              Divider(height: 1, thickness: 0.6, color: p.line),
             InkWell(
-              onTap: () => onOpen(match),
-              onLongPress: () => onLongPress(match),
+              onTap: () => onOpen(matches[index]),
+              onLongPress: () => onLongPress(matches[index]),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 2),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.article_outlined, size: 14, color: p.moss),
-                    const SizedBox(width: 9),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            match.title,
+                            matches[index].title,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style:
-                                Theme.of(context).textTheme.titleSmall?.copyWith(
-                                      fontSize: 13,
-                                      color: p.ink,
-                                    ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            (match.meta['section']?.toString() ?? 'Indexed')
-                                .toUpperCase(),
                             style: Theme.of(context)
                                 .textTheme
-                                .labelSmall
+                                .titleSmall
                                 ?.copyWith(
-                                  color: p.faint,
-                                  fontSize: 7.5,
-                                  letterSpacing: 0.5,
+                                  fontSize: 15,
+                                  height: 1.35,
+                                  fontWeight: FontWeight.w400,
+                                  color: p.mossDeep,
                                 ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '${matches[index].meta['section']?.toString() ?? 'Indexed'}'
+                            '  ·  On-device',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: p.muted,
+                                      fontSize: 11.5,
+                                    ),
                           ),
                         ],
                       ),
                     ),
-                    Icon(
-                      Icons.north_west_rounded,
-                      size: 12,
-                      color: p.moss,
+                    const SizedBox(width: 6),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: p.faint,
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
+          ],
         ],
       ),
     );

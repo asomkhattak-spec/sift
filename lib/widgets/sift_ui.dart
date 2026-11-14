@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 
 import '../core/theme/sift_theme.dart';
 
-/// Shared interface primitives. Structure comes from rules, spacing and type;
-/// there are deliberately no gradient fills or ambient shadows in this file.
+/// Shared interface primitives. The language is intentionally quiet: white
+/// surfaces, fine grey rules, rounded controls and a single blue accent.
 class SiftRule extends StatelessWidget {
   const SiftRule({
     super.key,
@@ -30,38 +30,48 @@ class SiftRule extends StatelessWidget {
 }
 
 class SiftWordmark extends StatelessWidget {
-  const SiftWordmark({super.key, this.size = 26, this.onTap});
+  const SiftWordmark({
+    super.key,
+    this.size = 26,
+    this.onTap,
+    this.monochrome = false,
+  });
 
   final double size;
   final VoidCallback? onTap;
+  final bool monochrome;
 
   @override
   Widget build(BuildContext context) {
     final p = context.sift;
+    final colors = monochrome
+        ? <Color>[p.ink, p.ink, p.ink, p.ink]
+        : const <Color>[
+            SiftPalette.wordmarkBlue,
+            SiftPalette.wordmarkRed,
+            SiftPalette.wordmarkYellow,
+            SiftPalette.wordmarkGreen,
+          ];
+    const letters = ['S', 'i', 'f', 't'];
     final word = Text.rich(
       TextSpan(
         children: [
-          TextSpan(
-            text: 'sift',
-            style: TextStyle(
-              fontFamily: 'Instrument Serif',
-              fontSize: size,
-              height: 0.95,
-              letterSpacing: -0.5,
-              color: p.ink,
+          for (var i = 0; i < letters.length; i++)
+            TextSpan(
+              text: letters[i],
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: size,
+                height: 1.0,
+                letterSpacing: size * -0.045,
+                fontWeight: FontWeight.w500,
+                color: colors[i],
+              ),
             ),
-          ),
-          TextSpan(
-            text: '.',
-            style: TextStyle(
-              fontFamily: 'Instrument Serif',
-              fontSize: size,
-              height: 0.95,
-              color: p.clay,
-            ),
-          ),
         ],
       ),
+      semanticsLabel: 'Sift',
+      textAlign: TextAlign.center,
     );
     if (onTap == null) return word;
     return Semantics(
@@ -71,8 +81,198 @@ class SiftWordmark extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 6),
           child: word,
+        ),
+      ),
+    );
+  }
+}
+
+/// A circular action used in slim app bars and result headers.
+class SiftCircleAction extends StatelessWidget {
+  const SiftCircleAction({
+    required this.icon,
+    required this.tooltip,
+    this.onPressed,
+    this.active = false,
+    this.size = 40,
+    this.iconSize = 20,
+    this.badge,
+    super.key,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+  final bool active;
+  final double size;
+  final double iconSize;
+  final String? badge;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.sift;
+    final button = IconButton(
+      onPressed: onPressed,
+      tooltip: tooltip,
+      iconSize: iconSize,
+      padding: EdgeInsets.zero,
+      constraints: BoxConstraints.tightFor(width: size, height: size),
+      style: IconButton.styleFrom(
+        foregroundColor: active ? p.mossDeep : p.inkSoft,
+        backgroundColor: active ? p.mossWash : p.surfaceRaised,
+        shape: const CircleBorder(),
+      ),
+      icon: Icon(icon),
+    );
+    if (badge == null) return button;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        button,
+        Positioned(
+          right: 0,
+          top: 0,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            decoration: BoxDecoration(
+              color: p.clay,
+              borderRadius: BorderRadius.circular(SiftRadius.pill),
+              border: Border.all(color: p.paper, width: 1.5),
+            ),
+            child: Text(
+              badge!,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Colors.white,
+                    fontSize: 8,
+                    height: 1.1,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// A rounded, selectable filter chip with a single line of text.
+class SiftPillChip extends StatelessWidget {
+  const SiftPillChip({
+    required this.label,
+    this.icon,
+    this.onTap,
+    this.selected = false,
+    this.trailing,
+    super.key,
+  });
+
+  final String label;
+  final IconData? icon;
+  final VoidCallback? onTap;
+  final bool selected;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.sift;
+    return Material(
+      color: selected ? p.mossWash : p.surface,
+      borderRadius: BorderRadius.circular(SiftRadius.pill),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(SiftRadius.pill),
+        child: Container(
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: selected ? Colors.transparent : p.line,
+            ),
+            borderRadius: BorderRadius.circular(SiftRadius.pill),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(
+                  icon,
+                  size: 17,
+                  color: selected ? p.mossDeep : p.muted,
+                ),
+                const SizedBox(width: 7),
+              ],
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: selected ? p.mossDeep : p.inkSoft,
+                      fontSize: 13,
+                    ),
+              ),
+              if (trailing != null) ...[
+                const SizedBox(width: 6),
+                trailing!,
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A shortcut bubble and label, matching the home-screen launcher pattern.
+class SiftShortcut extends StatelessWidget {
+  const SiftShortcut({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color,
+    super.key,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.sift;
+    final tint = color ?? p.moss;
+    return Semantics(
+      button: true,
+      label: label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(SiftRadius.md),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: p.isDark ? p.surfaceRaised : tint.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: tint, size: 25),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: p.inkSoft,
+                      fontSize: 12,
+                    ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -173,31 +373,31 @@ class SiftButton extends StatelessWidget {
     final p = context.sift;
     final enabled = onPressed != null && !busy;
     final (background, foreground, border) = switch (tone) {
-      SiftButtonTone.moss => (p.mossDeep, p.paper, p.mossDeep),
-      SiftButtonTone.clay => (p.clay, const Color(0xFFFFF8F2), p.clay),
+      SiftButtonTone.moss => (p.moss, Colors.white, p.moss),
+      SiftButtonTone.clay => (p.clay, Colors.white, p.clay),
       SiftButtonTone.quiet => (p.mossWash, p.mossDeep, p.mossWash),
-      SiftButtonTone.line => (Colors.transparent, p.ink, p.lineStrong),
+      SiftButtonTone.line => (p.surface, p.inkSoft, p.line),
     };
     return Semantics(
       button: true,
       enabled: enabled,
       child: Material(
         color: enabled ? background : background.withOpacity(0.45),
-        borderRadius: BorderRadius.circular(SiftRadius.sm),
+        borderRadius: BorderRadius.circular(SiftRadius.pill),
         child: InkWell(
           onTap: enabled ? onPressed : null,
-          borderRadius: BorderRadius.circular(SiftRadius.sm),
+          borderRadius: BorderRadius.circular(SiftRadius.pill),
           child: Container(
-            height: compact ? 38 : 48,
+            height: compact ? 36 : 44,
             width: expand ? double.infinity : null,
             padding: EdgeInsets.symmetric(
-              horizontal: compact ? 14 : 18,
+              horizontal: compact ? 14 : 20,
             ),
             decoration: BoxDecoration(
               border: Border.all(
                 color: enabled ? border : p.line,
               ),
-              borderRadius: BorderRadius.circular(SiftRadius.sm),
+              borderRadius: BorderRadius.circular(SiftRadius.pill),
             ),
             child: Row(
               mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
@@ -219,7 +419,8 @@ class SiftButton extends StatelessWidget {
                   label,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: foreground,
-                        fontSize: compact ? 13 : 14,
+                        fontSize: compact ? 12.5 : 14,
+                        fontWeight: FontWeight.w500,
                       ),
                 ),
               ],
@@ -235,7 +436,7 @@ class SiftTextAction extends StatelessWidget {
   const SiftTextAction({
     required this.label,
     this.onTap,
-    this.icon = Icons.arrow_forward_rounded,
+    this.icon = Icons.chevron_right_rounded,
     this.color,
     super.key,
   });
@@ -252,23 +453,23 @@ class SiftTextAction extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(SiftRadius.xs),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 7),
+        padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               label,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: onTap == null ? p.faint : (color ?? p.moss),
-                    letterSpacing: 0.4,
-                    fontSize: 11,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
                   ),
             ),
             if (icon != null) ...[
               const SizedBox(width: 5),
               Icon(
                 icon,
-                size: 14,
+                size: 16,
                 color: onTap == null ? p.faint : (color ?? p.moss),
               ),
             ],
@@ -306,17 +507,17 @@ class SiftFilterTab extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 9),
+              padding: const EdgeInsets.only(top: 10, bottom: 8),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     label,
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: selected ? p.ink : p.muted,
+                          color: selected ? p.mossDeep : p.muted,
                           fontWeight:
-                              selected ? FontWeight.w600 : FontWeight.w400,
-                          fontSize: 13.5,
+                              selected ? FontWeight.w500 : FontWeight.w400,
+                          fontSize: 14,
                         ),
                   ),
                   if (count != null) ...[
@@ -324,8 +525,8 @@ class SiftFilterTab extends StatelessWidget {
                     Text(
                       '$count',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: selected ? p.clay : p.faint,
-                            fontSize: 9,
+                            color: selected ? p.moss : p.faint,
+                            fontSize: 10,
                           ),
                     ),
                   ],
@@ -333,11 +534,14 @@ class SiftFilterTab extends StatelessWidget {
               ),
             ),
             AnimatedContainer(
-              duration: const Duration(milliseconds: 170),
-              curve: Curves.easeOut,
-              height: 2,
-              width: selected ? 22 : 0,
-              color: p.clay,
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              height: 3,
+              width: selected ? 28 : 0,
+              decoration: BoxDecoration(
+                color: p.moss,
+                borderRadius: BorderRadius.circular(3),
+              ),
             ),
           ],
         ),
@@ -379,7 +583,10 @@ class SiftSectionHead extends StatelessWidget {
                 ],
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
               ],
             ),
@@ -454,7 +661,7 @@ class SiftSurface extends StatelessWidget {
     this.padding = const EdgeInsets.all(16),
     this.color,
     this.borderColor,
-    this.radius = SiftRadius.sm,
+    this.radius = SiftRadius.md,
     this.onTap,
     this.clip = false,
     super.key,
@@ -511,10 +718,10 @@ class SiftBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.sift;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: background ?? p.mossWash,
-        borderRadius: BorderRadius.circular(SiftRadius.xs),
+        borderRadius: BorderRadius.circular(SiftRadius.pill),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -524,12 +731,13 @@ class SiftBadge extends StatelessWidget {
             const SizedBox(width: 4),
           ],
           Text(
-            label.toUpperCase(),
+            label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: color ?? p.mossDeep,
-                  fontSize: 9,
+                  fontSize: 10.5,
                   height: 1.2,
-                  letterSpacing: 0.8,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.1,
                 ),
           ),
         ],
@@ -560,13 +768,13 @@ class SiftEmpty extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
-              border: Border.all(color: p.lineStrong),
-              borderRadius: BorderRadius.circular(SiftRadius.md),
+              color: p.surfaceRaised,
+              borderRadius: BorderRadius.circular(SiftRadius.pill),
             ),
-            child: Icon(icon, size: 21, color: p.muted),
+            child: Icon(icon, size: 24, color: p.moss),
           ),
           const SizedBox(height: 18),
           Text(
@@ -718,14 +926,16 @@ Future<T?> showSiftSheet<T>(
         child: Container(
           decoration: BoxDecoration(
             color: p.surface,
-            border: Border(
-              top: BorderSide(color: p.lineStrong),
-              left: BorderSide(color: p.line),
-              right: BorderSide(color: p.line),
-            ),
             borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(20),
+              top: Radius.circular(24),
             ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x1F000000),
+                blurRadius: 24,
+                offset: Offset(0, -4),
+              ),
+            ],
           ),
           child: builder(sheetContext),
         ),
@@ -754,12 +964,12 @@ class SiftSheetTitle extends StatelessWidget {
       children: [
         Center(
           child: Container(
-            width: 34,
-            height: 3,
-            margin: const EdgeInsets.only(top: 10, bottom: 18),
+            width: 32,
+            height: 4,
+            margin: const EdgeInsets.only(top: 10, bottom: 16),
             decoration: BoxDecoration(
               color: p.lineStrong,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(4),
             ),
           ),
         ),

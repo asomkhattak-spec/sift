@@ -25,6 +25,7 @@ Flutter's license registry.
 
 ## Typography
 
+- Roboto — Apache License 2.0
 - Instrument Serif — SIL Open Font License 1.1
 - IBM Plex Sans and IBM Plex Mono — SIL Open Font License 1.1
 

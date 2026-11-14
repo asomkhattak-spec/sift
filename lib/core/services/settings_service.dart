@@ -155,7 +155,7 @@ class SettingsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool get serifHeadings => _prefs.getBool(_kSerifHeadings) ?? true;
+  bool get serifHeadings => _prefs.getBool(_kSerifHeadings) ?? false;
   set serifHeadings(bool value) {
     if (serifHeadings == value) return;
     _prefs.setBool(_kSerifHeadings, value);

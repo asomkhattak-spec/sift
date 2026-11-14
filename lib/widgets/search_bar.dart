@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/sift_theme.dart';
 
+/// The one search field used on the home and results screens. It keeps a
+/// soft white pill, a blue leading icon and only actions that do something:
+/// clear, choose sources, or submit.
 class SiftSearchBar extends StatefulWidget {
   const SiftSearchBar({
     required this.controller,
     required this.focusNode,
     required this.onSubmitted,
     this.onChanged,
-    this.hintText = 'Search the web',
+    this.onSources,
+    this.hintText = 'Search with Sift',
     this.compact = false,
     this.autofocus = false,
     this.leading,
@@ -19,6 +23,7 @@ class SiftSearchBar extends StatefulWidget {
   final FocusNode focusNode;
   final ValueChanged<String> onSubmitted;
   final ValueChanged<String>? onChanged;
+  final VoidCallback? onSources;
   final String hintText;
   final bool compact;
   final bool autofocus;
@@ -60,31 +65,40 @@ class _SiftSearchBarState extends State<SiftSearchBar> {
   @override
   Widget build(BuildContext context) {
     final p = context.sift;
-    final height = widget.compact ? 50.0 : 58.0;
+    final height = widget.compact ? 48.0 : 54.0;
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
+      duration: const Duration(milliseconds: 160),
       curve: Curves.easeOut,
       height: height,
       decoration: BoxDecoration(
         color: p.surface,
         border: Border.all(
-          color: _focused ? p.moss : p.lineStrong,
-          width: _focused ? 1.4 : 1,
+          color: _focused ? p.moss : p.line,
+          width: _focused ? 1.5 : 1,
         ),
-        borderRadius: BorderRadius.circular(SiftRadius.md),
+        borderRadius: BorderRadius.circular(SiftRadius.pill),
+        boxShadow: [
+          BoxShadow(
+            color: p.isDark
+                ? const Color(0x33000000)
+                : const Color(0x141A73E8),
+            blurRadius: _focused ? 12 : 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Padding(
             padding: EdgeInsets.only(
-              left: widget.compact ? 8 : 10,
-              right: widget.compact ? 2 : 4,
+              left: widget.compact ? 14 : 16,
+              right: widget.compact ? 8 : 10,
             ),
             child: widget.leading ??
                 Icon(
                   Icons.search_rounded,
                   size: widget.compact ? 20 : 22,
-                  color: _focused ? p.moss : p.muted,
+                  color: p.moss,
                 ),
           ),
           Expanded(
@@ -105,18 +119,19 @@ class _SiftSearchBarState extends State<SiftSearchBar> {
               cursorWidth: 1.6,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w400,
-                    fontSize: widget.compact ? 14.5 : 16,
+                    fontSize: widget.compact ? 15 : 16,
                     color: p.ink,
                   ),
               decoration: InputDecoration(
                 isCollapsed: true,
+                filled: false,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 hintText: widget.hintText,
                 hintStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w400,
-                      fontSize: widget.compact ? 14.5 : 16,
+                      fontSize: widget.compact ? 15 : 16,
                       color: p.faint,
                     ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 16),
@@ -130,52 +145,50 @@ class _SiftSearchBarState extends State<SiftSearchBar> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (value.text.isNotEmpty)
-                    IconButton(
+                    _BarAction(
                       tooltip: 'Clear search',
+                      icon: Icons.close_rounded,
                       onPressed: () {
                         widget.controller.clear();
                         widget.onChanged?.call('');
                         widget.focusNode.requestFocus();
-                        setState(() {});
                       },
-                      icon: Icon(
-                        Icons.close_rounded,
-                        size: 18,
-                        color: p.muted,
-                      ),
-                      constraints:
-                          const BoxConstraints(minWidth: 36, minHeight: 40),
-                      padding: const EdgeInsets.all(6),
-                      visualDensity: VisualDensity.compact,
+                    ),
+                  if (widget.onSources != null)
+                    _BarAction(
+                      tooltip: 'Search sources',
+                      icon: Icons.tune_rounded,
+                      onPressed: widget.onSources,
                     ),
                   Padding(
                     padding: EdgeInsets.fromLTRB(
                       2,
-                      widget.compact ? 6 : 7,
-                      widget.compact ? 6 : 7,
-                      widget.compact ? 6 : 7,
+                      widget.compact ? 5 : 7,
+                      5,
+                      widget.compact ? 5 : 7,
                     ),
                     child: Semantics(
                       button: true,
-                      label: 'Submit search',
+                      label: 'Search',
                       child: Material(
-                        color: _focused || value.text.isNotEmpty
-                            ? p.clay
-                            : p.mossDeep,
-                        borderRadius:
-                            BorderRadius.circular(SiftRadius.sm),
+                        color: p.moss,
+                        shape: const CircleBorder(),
                         child: InkWell(
-                          borderRadius:
-                              BorderRadius.circular(SiftRadius.sm),
-                          onTap: () =>
-                              widget.onSubmitted(widget.controller.text),
+                          customBorder: const CircleBorder(),
+                          onTap: () {
+                            if (widget.controller.text.trim().isEmpty) {
+                              widget.focusNode.requestFocus();
+                              return;
+                            }
+                            widget.onSubmitted(widget.controller.text);
+                          },
                           child: SizedBox(
-                            width: widget.compact ? 38 : 44,
-                            height: widget.compact ? 38 : 44,
+                            width: widget.compact ? 38 : 40,
+                            height: widget.compact ? 38 : 40,
                             child: Icon(
                               Icons.arrow_forward_rounded,
-                              size: widget.compact ? 18 : 20,
-                              color: const Color(0xFFFFF8F2),
+                              size: widget.compact ? 18 : 19,
+                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -188,6 +201,35 @@ class _SiftSearchBarState extends State<SiftSearchBar> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _BarAction extends StatelessWidget {
+  const _BarAction({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.sift;
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onPressed,
+      iconSize: 19,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints.tightFor(width: 36, height: 40),
+      style: IconButton.styleFrom(
+        foregroundColor: p.muted,
+        highlightColor: p.surfaceRaised,
+      ),
+      icon: Icon(icon),
     );
   }
 }

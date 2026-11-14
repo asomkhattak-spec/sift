@@ -118,7 +118,7 @@ class _RootShellState extends State<RootShell> {
   Widget _pageFor(int index) {
     if (!_built.contains(index)) return const SizedBox.shrink();
     return switch (index) {
-      0 => SearchScreen(key: _searchKey),
+      0 => SearchScreen(key: _searchKey, onOpenTab: _select),
       1 => DiscoverScreen(key: _discoverKey),
       2 => MySearchScreen(key: _mySearchKey),
       _ => LibraryScreen(key: _libraryKey),
@@ -221,37 +221,37 @@ class _BottomItem extends StatelessWidget {
       label: label,
       child: InkResponse(
         onTap: onTap,
-        radius: 38,
+        radius: 40,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(selected ? selectedIcon : icon, size: 21, color: color),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (selected) ...[
-                  Container(
-                    width: 4,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: p.clay,
-                      borderRadius: BorderRadius.circular(1),
-                    ),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOutCubic,
+              width: selected ? 46 : 36,
+              height: 28,
+              decoration: BoxDecoration(
+                color: selected ? p.mossWash : Colors.transparent,
+                borderRadius: BorderRadius.circular(SiftRadius.pill),
+              ),
+              child: Icon(
+                selected ? selectedIcon : icon,
+                size: 20,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: color,
+                    fontSize: 10,
+                    letterSpacing: 0,
+                    fontWeight:
+                        selected ? FontWeight.w500 : FontWeight.w400,
                   ),
-                  const SizedBox(width: 5),
-                ],
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: color,
-                        fontSize: 9.5,
-                        letterSpacing: 0.2,
-                        fontWeight:
-                            selected ? FontWeight.w600 : FontWeight.w400,
-                      ),
-                ),
-              ],
             ),
           ],
         ),
