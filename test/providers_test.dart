@@ -141,7 +141,7 @@ void main() {
       expect(uri.queryParameters['gsrnamespace'], '6');
       // The provider asks for a wider page than the UI needs so that audio and
       // documents can be filtered out without starving the grid.
-      expect(uri.queryParameters['gsrlimit'], '30');
+      expect(uri.queryParameters['gsrlimit'], '40');
       expect(uri.queryParameters['iiurlwidth'], '720');
     });
 
