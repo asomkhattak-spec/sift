@@ -46,7 +46,7 @@ class UpdateManifest {
       '${(sizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
 
   factory UpdateManifest.fromJson(Map<String, dynamic> json) {
-    final code = _positiveInt(json['version_code'], 2_000_000_000);
+    final code = _positiveInt(json['version_code'], 2000000000);
     final name = _versionName(json['version_name']);
     final url = json['apk_url'];
     final digest = json['sha256'];

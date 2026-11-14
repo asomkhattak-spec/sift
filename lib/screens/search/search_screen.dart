@@ -17,6 +17,7 @@ import '../../widgets/sift_ui.dart';
 import '../settings/privacy_screen.dart';
 import '../settings/settings_screen.dart';
 import '../settings/sources_screen.dart';
+import 'image_viewer_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key, this.onOpenTab});
