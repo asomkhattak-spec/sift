@@ -220,6 +220,7 @@ class _BottomItem extends StatelessWidget {
       button: true,
       label: label,
       child: InkResponse(
+        key: ValueKey('nav-$label'),
         onTap: onTap,
         radius: 40,
         child: Column(

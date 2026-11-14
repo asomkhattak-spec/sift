@@ -192,28 +192,28 @@ void main() {
       matchesGoldenFile('goldens/01_search.png'),
     );
 
-    await tester.tap(find.text('Discover'));
+    await tester.tap(find.byKey(const ValueKey('nav-Discover')));
     await tester.pumpAndSettle();
     await expectLater(
       find.byType(SiftApp),
       matchesGoldenFile('goldens/02_discover.png'),
     );
 
-    await tester.tap(find.text('My Search'));
+    await tester.tap(find.byKey(const ValueKey('nav-My Search')));
     await tester.pumpAndSettle();
     await expectLater(
       find.byType(SiftApp),
       matchesGoldenFile('goldens/03_my_search.png'),
     );
 
-    await tester.tap(find.text('Library'));
+    await tester.tap(find.byKey(const ValueKey('nav-Library')));
     await tester.pumpAndSettle();
     await expectLater(
       find.byType(SiftApp),
       matchesGoldenFile('goldens/04_library.png'),
     );
 
-    await tester.tap(find.text('Search'));
+    await tester.tap(find.byKey(const ValueKey('nav-Search')));
     await tester.pumpAndSettle();
     await tester.tap(find.byType(TextField));
     await tester.pump();
