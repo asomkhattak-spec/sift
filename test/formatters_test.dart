@@ -53,6 +53,16 @@ void main() {
     expect(firstLetter(''), '·');
   });
 
+  test('licenseLabel turns short codes into readable labels', () {
+    expect(licenseLabel('by'), 'CC BY');
+    expect(licenseLabel('by-sa'), 'CC BY-SA');
+    expect(licenseLabel('by-nc-sa'), 'CC BY-NC-SA');
+    expect(licenseLabel('cc0'), 'CC0');
+    expect(licenseLabel('pdm'), 'Public domain');
+    expect(licenseLabel('CC BY 4.0'), 'CC BY 4.0');
+    expect(licenseLabel(''), '');
+  });
+
   test('privacySummary never promises anonymity', () {
     final summary = privacySummary(privateMode: true, blocking: true, proxy: false);
     expect(summary, contains('no saved activity'));

@@ -70,6 +70,31 @@ String formatDuration(int? seconds) {
   return '$minutes:$remaining';
 }
 
+/// Formats the short licence codes used by Openverse and Commons into
+/// something a person can read at a glance.
+String licenseLabel(String raw) {
+  final value = raw.trim();
+  if (value.isEmpty) return '';
+  final normalized = value.toLowerCase();
+  if (normalized == 'cc0' ||
+      normalized == 'cc-0' ||
+      normalized == 'zero') {
+    return 'CC0';
+  }
+  if (normalized == 'pdm' ||
+      normalized == 'public domain' ||
+      normalized == 'publicdomain') {
+    return 'Public domain';
+  }
+  if (normalized.startsWith('cc-')) {
+    return value.toUpperCase().replaceAll('_', '-');
+  }
+  if (normalized.startsWith('by')) {
+    return 'CC ${value.toUpperCase().replaceAll('_', '-')}';
+  }
+  return value;
+}
+
 String compactNumber(num value) {
   if (value >= 1000000) {
     return '${(value / 1000000).toStringAsFixed(value >= 10000000 ? 0 : 1)}m';

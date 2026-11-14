@@ -664,6 +664,7 @@ class ImageResultTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.sift;
     final image = result.thumbnailUrl ?? result.imageUrl;
+    final license = licenseLabel(result.meta['license']?.toString() ?? '');
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(SiftRadius.sm),
@@ -706,7 +707,7 @@ class ImageResultTile extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              result.meta['license']?.toString() ?? result.host,
+              license.isEmpty ? result.host : license,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(

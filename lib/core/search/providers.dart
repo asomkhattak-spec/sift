@@ -356,7 +356,7 @@ class WikimediaCommonsProvider extends SearchProvider {
           kind: isVideo ? ResultKind.video : ResultKind.image,
           title: title,
           url: page,
-          snippet: details.join(' · '),
+          snippet: isVideo ? truncateText(description, 160) : details.join(' · '),
           sourceId: 'commons',
           sourceName: 'Wikimedia Commons',
           domain: 'commons.wikimedia.org',
@@ -510,18 +510,14 @@ class DailymotionProvider extends SearchProvider {
       final views = raw['views_total'];
       final duration = raw['duration'];
       final created = raw['created_time'];
-      final snippetParts = <String>[
-        if (owner != null && owner.isNotEmpty) owner,
-        if (views is num) '${compactNumber(views)} views',
-        if (duration is num) formatDuration(duration.toInt()),
-      ];
+      final viewsLabel = views is num ? '${compactNumber(views)} views' : '';
       results.add(
         SearchResult(
           id: _idFor('dailymotion', url),
           kind: ResultKind.video,
           title: title,
           url: url,
-          snippet: snippetParts.join(' · '),
+          snippet: viewsLabel,
           sourceId: 'dailymotion',
           sourceName: 'Dailymotion',
           domain: 'dailymotion.com',

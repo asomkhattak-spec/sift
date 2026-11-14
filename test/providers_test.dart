@@ -162,7 +162,7 @@ void main() {
       expect(video.kind, ResultKind.video);
       expect(video.duration, '1:23');
       expect(video.meta['mime'], 'video/webm');
-      expect(video.snippet, contains('1:23'));
+      expect(video.snippet, contains('Still water below'));
 
       final uri = Uri.parse(http.calls.single);
       expect(uri.queryParameters['gsrsearch'], 'rust filetype:video');

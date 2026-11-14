@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/models/search_models.dart';
 import '../../core/services/sift_scope.dart';
+import '../../core/utils/formatters.dart';
 import '../../core/utils/navigation.dart';
 import '../../widgets/sift_ui.dart';
 
@@ -143,7 +144,7 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
     final result = _current;
     final attribution = [
       result.meta['author']?.toString() ?? result.author ?? '',
-      result.meta['license']?.toString() ?? '',
+      licenseLabel(result.meta['license']?.toString() ?? ''),
       result.sourceName,
     ].where((part) => part.isNotEmpty).join(' · ');
 
