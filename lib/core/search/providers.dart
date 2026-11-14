@@ -320,7 +320,8 @@ class WikimediaCommonsProvider extends SearchProvider {
       if (info is! Map) continue;
       final mime = info['mime']?.toString() ?? '';
       final isVideo = mime.startsWith('video/');
-      if (wantsVideo != isVideo) continue;
+      final isImage = mime.startsWith('image/');
+      if (wantsVideo ? !isVideo : !isImage) continue;
       final page = info['descriptionurl']?.toString() ?? '';
       final title = _commonsTitle(raw['title']?.toString() ?? '');
       if (page.isEmpty || title.isEmpty) continue;
