@@ -83,10 +83,10 @@ jobs:
         run: |
           if [ -n "${SIFT_KEYSTORE_BASE64:-}" ]; then
             echo "$SIFT_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/sift-release.jks"
-            echo "SIFT_KEYSTORE_PATH=$RUNNER_TEMP/sift-release.jks" >> "$GITHUB_ENV"
-            echo "SIFT_KEYSTORE_PASSWORD=$SIFT_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
-            echo "SIFT_KEY_ALIAS=${SIFT_KEY_ALIAS:-sift}" >> "$GITHUB_ENV"
-            echo "SIFT_KEY_PASSWORD=${SIFT_KEY_PASSWORD:-$SIFT_KEYSTORE_PASSWORD}" >> "$GITHUB_ENV"
+            export SIFT_KEYSTORE_PATH="$RUNNER_TEMP/sift-release.jks"
+            export SIFT_KEYSTORE_PASSWORD="$SIFT_KEYSTORE_PASSWORD"
+            export SIFT_KEY_ALIAS="${SIFT_KEY_ALIAS:-sift}"
+            export SIFT_KEY_PASSWORD="${SIFT_KEY_PASSWORD:-$SIFT_KEYSTORE_PASSWORD}"
           fi
           flutter build apk --release
 
@@ -103,6 +103,18 @@ jobs:
           cp build/app/outputs/flutter-apk/app-release.apk "dist/Sift-${VERSION_NAME}.apk"
           echo "SIFT_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           sha256sum "dist/Sift-${VERSION_NAME}.apk"
+          if [ -f "$RUNNER_TEMP/sift-release.jks" ]; then
+            APKSIGNER="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -name apksigner -type f | sort -V | tail -1)"
+            if [ -z "$APKSIGNER" ]; then
+              echo "Could not find apksigner to verify the release signature." >&2
+              exit 1
+            fi
+            "$APKSIGNER" verify --print-certs "dist/Sift-${VERSION_NAME}.apk" | tee /tmp/sift-signature.txt
+            if ! grep -q "CN=Sift" /tmp/sift-signature.txt; then
+              echo "Release APK is not signed with the Sift release key." >&2
+              exit 1
+            fi
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
