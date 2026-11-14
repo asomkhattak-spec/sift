@@ -16,6 +16,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sift/app.dart';
+import 'package:sift/core/ota/remote_ui_service.dart';
+import 'package:sift/core/ota/update_service.dart';
 import 'package:sift/core/search/local_index.dart';
 import 'package:sift/core/search/search_engine.dart';
 import 'package:sift/core/services/http_service.dart';
@@ -66,7 +68,54 @@ const _hn = '''
 const _openverse = '''
 {"results":[
   {"title":"Morning light","url":"https://images.example.org/1.jpg","thumbnail":"https://images.example.org/1-t.jpg","foreign_landing_url":"https://example.org/light","license":"by","creator":"A. Photographer","provider":"flickr","width":1600,"height":1067},
-  {"title":"Concrete geometry","url":"https://images.example.org/2.jpg","thumbnail":"https://images.example.org/2-t.jpg","foreign_landing_url":"https://example.org/concrete","license":"cc0","creator":"B. Builder","provider":"museum","width":1200,"height":1500}
+  {"title":"Concrete geometry","url":"https://images.example.org/2.jpg","thumbnail":"https://images.example.org/2-t.jpg","foreign_landing_url":"https://example.org/concrete","license":"cc0","creator":"B. Builder","provider":"museum","width":1200,"height":1500},
+  {"title":"Glasshouse at dusk","url":"https://images.example.org/3.jpg","thumbnail":"https://images.example.org/3-t.jpg","foreign_landing_url":"https://example.org/glasshouse","license":"by-sa","creator":"C. Gardener","provider":"flickr","width":1500,"height":1000},
+  {"title":"Harbour in fog","url":"https://images.example.org/4.jpg","thumbnail":"https://images.example.org/4-t.jpg","foreign_landing_url":"https://example.org/harbour","license":"by","creator":"D. Sailor","provider":"wikimedia","width":1000,"height":1400}
+]}
+''';
+
+const _suggestions = '''
+["rust programming",["rust programming language","rust book","rust vs go","rust ownership","rust async","rustwasm"]]
+''';
+
+const _commons = '''
+{"query":{"pages":[
+  {"pageid":11,"title":"File:Alpine lake at sunrise.jpg","imageinfo":[{
+    "mime":"image/jpeg",
+    "url":"https://images.example.org/commons-1.jpg",
+    "thumburl":"https://images.example.org/commons-1-t.jpg",
+    "thumbwidth":720,"thumbheight":480,
+    "descriptionurl":"https://commons.wikimedia.org/wiki/File:Alpine_lake_at_sunrise.jpg",
+    "extmetadata":{
+      "LicenseShortName":{"value":"CC BY 4.0"},
+      "Artist":{"value":"E. Climber"},
+      "ImageDescription":{"value":"Still water below the north face."}
+    }
+  }]},
+  {"pageid":12,"title":"File:Rust in ten minutes.webm","imageinfo":[{
+    "mime":"video/webm",
+    "url":"https://images.example.org/commons-2.webm",
+    "thumburl":"https://images.example.org/commons-2-t.jpg",
+    "thumbwidth":640,"thumbheight":360,"duration":614,
+    "descriptionurl":"https://commons.wikimedia.org/wiki/File:Rust_in_ten_minutes.webm",
+    "extmetadata":{
+      "LicenseShortName":{"value":"CC BY-SA 4.0"},
+      "Artist":{"value":"F. Ferris"},
+      "ImageDescription":{"value":"A short tour of the borrow checker."}
+    }
+  }]},
+  {"pageid":13,"title":"File:Ambient loop.ogg","imageinfo":[{
+    "mime":"audio/ogg","url":"https://images.example.org/loop.ogg",
+    "descriptionurl":"https://commons.wikimedia.org/wiki/File:Ambient_loop.ogg",
+    "extmetadata":{}
+  }]}
+]}}
+''';
+
+const _dailymotion = '''
+{"list":[
+  {"id":"x8abc","title":"Rust ownership in ten minutes","thumbnail_480_url":"https://images.example.org/video-1.jpg","url":"https://www.dailymotion.com/video/x8abc","duration":614,"owner.screenname":"Code Daily","views_total":18400,"created_time":1730000000},
+  {"id":"x8def","title":"Building a search engine for a phone","thumbnail_480_url":"https://images.example.org/video-2.jpg","url":"https://www.dailymotion.com/video/x8def","duration":1432,"owner.screenname":"Sift Lab","views_total":9200,"created_time":1731000000}
 ]}
 ''';
 
@@ -77,12 +126,18 @@ class _FakeHttp extends SiftHttp {
     Map<String, String>? headers,
     Duration timeout = const Duration(seconds: 9),
     int cacheSeconds = 0,
+    int maxBytes = 0,
   }) async {
     final value = url.toLowerCase();
+    if (value.contains('commons.wikimedia')) return _commons;
     if (value.contains('wikipedia')) return _wikipedia;
     if (value.contains('hn.algolia')) return _hn;
     if (value.contains('openverse')) return _openverse;
-    if (value.contains('bing.com') || value.contains('news.google')) return _rss;
+    if (value.contains('dailymotion')) return _dailymotion;
+    if (value.contains('osjson')) return _suggestions;
+    if (value.contains('bing.com') || value.contains('news.google')) {
+      return _rss;
+    }
     return '{}';
   }
 
@@ -92,6 +147,7 @@ class _FakeHttp extends SiftHttp {
     Map<String, String>? headers,
     Duration timeout = const Duration(seconds: 9),
     int cacheSeconds = 0,
+    int maxBytes = 0,
   }) async {
     final decoded = jsonDecode(await getString(url, headers: headers));
     return decoded is Map ? decoded.cast<String, dynamic>() : <String, dynamic>{};
@@ -151,16 +207,27 @@ Future<SiftServices> _services() async {
   final library = LibraryService(prefs, settings);
   final index = LocalIndex(prefs, http);
   await index.load();
+  final native = NativeBridge();
   return SiftServices(
     settings: settings,
     library: library,
     localIndex: index,
     engine: SearchEngine(settings: settings, http: http, localIndex: index),
     http: http,
-    native: NativeBridge(),
+    native: native,
     blocker: TrackerBlocker(),
     core: SiftCore.instance,
     searchBus: SearchBus(),
+    remoteUi: RemoteUiService(
+      prefs: prefs,
+      http: http,
+      settings: settings,
+    ),
+    updates: UpdateService(
+      prefs: prefs,
+      native: native,
+      http: http,
+    ),
   );
 }
 
@@ -234,6 +301,42 @@ void main() {
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('goldens/06_settings.png'),
+    );
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    // Query suggestions: clear and retype the same query so the field fires
+    // its change handler without leaving the results out of step.
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+    await tester.enterText(find.byType(TextField), '');
+    await tester.enterText(find.byType(TextField), 'rust programming');
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+    await expectLater(
+      find.byType(SiftApp),
+      matchesGoldenFile('goldens/07_suggestions.png'),
+    );
+
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Images').first);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    await expectLater(
+      find.byType(SiftApp),
+      matchesGoldenFile('goldens/08_images.png'),
+    );
+
+    await tester.tap(find.text('Videos').first);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    await expectLater(
+      find.byType(SiftApp),
+      matchesGoldenFile('goldens/09_videos.png'),
     );
 
     services.native.dispose();

@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../../core/ota/update_service.dart';
 import '../../core/search/source_catalog.dart';
 import '../../core/services/sift_scope.dart';
 import '../../core/theme/sift_theme.dart';
@@ -21,12 +24,51 @@ class _AboutScreenState extends State<AboutScreen> {
   void initState() {
     super.initState();
     _services = SiftScope.readServicesOf(context);
+    _services.updates.addListener(_changed);
+    _services.remoteUi.addListener(_changed);
+    unawaited(_services.updates.reconcileInstalledVersion());
+  }
+
+  @override
+  void dispose() {
+    _services.updates.removeListener(_changed);
+    _services.remoteUi.removeListener(_changed);
+    super.dispose();
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  String _checkedLabel(DateTime? value) {
+    if (value == null) return 'Not checked yet';
+    final elapsed = DateTime.now().difference(value);
+    if (elapsed.inMinutes < 1) return 'Checked just now';
+    if (elapsed.inHours < 1) return 'Checked ${elapsed.inMinutes} min ago';
+    if (elapsed.inDays < 1) return 'Checked ${elapsed.inHours} h ago';
+    return 'Checked ${elapsed.inDays} d ago';
   }
 
   @override
   Widget build(BuildContext context) {
     final p = context.sift;
     final index = _services.localIndex;
+    final updates = _services.updates;
+    final remoteUi = _services.remoteUi.config;
+    final update = updates.manifest;
+    final status = switch (updates.phase) {
+      UpdatePhase.checking => 'Checking the release channel…',
+      UpdatePhase.upToDate => 'Sift is up to date.',
+      UpdatePhase.available => update == null
+          ? 'An update is available.'
+          : 'Sift ${update.versionName} is available · ${update.sizeLabel}.',
+      UpdatePhase.downloading =>
+        'Downloading update · ${(updates.progress * 100).round()}%',
+      UpdatePhase.downloaded => 'The update is downloaded and ready to install.',
+      UpdatePhase.installing => 'Opening the Android installer…',
+      UpdatePhase.failed => updates.error ?? 'The update check did not finish.',
+      UpdatePhase.idle => 'Checks run once per launch and never block startup.',
+    };
     return Scaffold(
       backgroundColor: p.paper,
       appBar: AppBar(
@@ -65,25 +107,26 @@ class _AboutScreenState extends State<AboutScreen> {
               const SizedBox(width: 10),
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
-                child: SiftBadge('1.0.0', background: p.surfaceRaised),
+                child: SiftBadge(
+                  updates.installedName,
+                  background: p.surfaceRaised,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
-            'A quiet search engine for a phone.',
+            'Private search for Android.',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: p.muted,
-                  fontStyle: FontStyle.italic,
                 ),
           ),
           const SizedBox(height: 26),
           Text(
-            'Sift began with a simple constraint: a search app should be a tool, '
-            'not a feed. There is no account, no advertising inventory, no '
-            'recommendation engine, and no reason for the app to know who you are. '
-            'It asks several independent sources, merges their answers on this phone, '
-            'and leaves a small local index you control.',
+            'Sift searches public sources and keeps a private index on your phone. '
+            'There is no account, ad inventory, recommendation feed, or server-side '
+            'profile. Requests go only to the sources you enable, and results are '
+            'merged on this device.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: p.inkSoft,
                   height: 1.72,
@@ -92,7 +135,7 @@ class _AboutScreenState extends State<AboutScreen> {
           const SizedBox(height: 22),
           _FactRow(
             icon: Icons.memory_rounded,
-            title: 'The difficult core is Rust',
+            title: 'A Rust core',
             body:
                 'Query planning, normalization, URL cleanup, reciprocal-rank fusion, '
                 'and BM25 scoring run in a small native library when the build ships it. '
@@ -108,7 +151,7 @@ class _AboutScreenState extends State<AboutScreen> {
           ),
           _FactRow(
             icon: Icons.hub_outlined,
-            title: 'A meta-search, not a crawl',
+            title: 'Meta-search, not a crawl',
             body:
                 'Maintaining a web-scale independent crawl is not possible inside a '
                 'phone app. Sift instead combines ${kSourceCatalog.length} public '
@@ -116,7 +159,7 @@ class _AboutScreenState extends State<AboutScreen> {
           ),
           _FactRow(
             icon: Icons.visibility_off_outlined,
-            title: 'Privacy is a discipline',
+            title: 'Privacy controls',
             body:
                 'No analytics SDK ships in the app. Tracking parameters are stripped, '
                 'known tracker hosts are filtered, and private browsing starts clean. '
@@ -126,16 +169,110 @@ class _AboutScreenState extends State<AboutScreen> {
           const SiftRule(),
           const SizedBox(height: 18),
           SiftSectionHead(
-            kicker: 'OPEN SOURCE',
-            title: 'Standing on good work',
+            title: 'Software updates',
             bottomPadding: 8,
           ),
           Text(
-            'Sift uses Flutter and Dart, flutter_inappwebview, shared_preferences, '
-            'the html and xml parsers, url_launcher, and FFI. Type is set in '
-            'Instrument Serif by Smythe and IBM Plex by IBM. The starter shelf links '
-            'to Wikipedia and other public references; their text remains under their '
-            'own licenses. Full notices are bundled with the app.',
+            'You are on Sift ${updates.installedName} '
+            '(build ${updates.installedCode}). ${_checkedLabel(updates.lastChecked)}.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: p.muted,
+                  height: 1.6,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            status,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: updates.phase == UpdatePhase.failed
+                      ? p.danger
+                      : p.inkSoft,
+                  height: 1.55,
+                ),
+          ),
+          if (updates.phase == UpdatePhase.downloading) ...[
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(SiftRadius.pill),
+              child: LinearProgressIndicator(
+                value: updates.progress > 0 ? updates.progress : null,
+                minHeight: 3,
+                backgroundColor: p.line,
+                valueColor: AlwaysStoppedAnimation<Color>(p.moss),
+              ),
+            ),
+          ],
+          if (updates.phase == UpdatePhase.available ||
+              updates.phase == UpdatePhase.failed ||
+              updates.phase == UpdatePhase.downloaded) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 10,
+              runSpacing: 8,
+              children: [
+                if (updates.phase == UpdatePhase.downloaded)
+                  SiftButton(
+                    label: 'Install update',
+                    icon: Icons.system_update_alt_rounded,
+                    compact: true,
+                    tone: SiftButtonTone.line,
+                    onPressed: updates.installDownloaded,
+                  )
+                else if (updates.manifest != null)
+                  SiftButton(
+                    label: 'Download update',
+                    icon: Icons.download_rounded,
+                    compact: true,
+                    tone: SiftButtonTone.line,
+                    onPressed: updates.downloadAndInstall,
+                  ),
+                SiftTextAction(
+                  label: updates.checking ? 'Checking…' : 'Check for updates',
+                  icon: Icons.refresh_rounded,
+                  onTap: updates.checking
+                      ? null
+                      : () => updates.check(manual: true),
+                ),
+              ],
+            ),
+          ] else ...[
+            const SizedBox(height: 8),
+            SiftTextAction(
+              label: updates.checking ? 'Checking…' : 'Check for updates',
+              icon: Icons.refresh_rounded,
+              onTap:
+                  updates.checking ? null : () => updates.check(manual: true),
+            ),
+          ],
+          if (updates.phase == UpdatePhase.downloading)
+            SiftTextAction(
+              label: 'Cancel download',
+              icon: null,
+              onTap: updates.cancelDownload,
+            ),
+          const SizedBox(height: 4),
+          Text(
+            remoteUi.version > 0 && _services.settings.remoteUiEnabled
+                ? 'Interface bundle ${remoteUi.version} is active.'
+                : 'The built-in interface is active.',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: p.faint,
+                  fontSize: 11,
+                  height: 1.5,
+                ),
+          ),
+          const SizedBox(height: 20),
+          const SiftRule(),
+          const SizedBox(height: 18),
+          SiftSectionHead(
+            title: 'Credits and licenses',
+            bottomPadding: 8,
+          ),
+          Text(
+            'Built with Flutter and Dart, flutter_inappwebview, shared_preferences, '
+            'the html and xml parsers, url_launcher, and FFI. Text is set in Roboto. '
+            'The starter shelf links to Wikipedia and other public references; their '
+            'text remains under their own licenses. Full notices are bundled with the app.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: p.muted,
                   height: 1.65,
@@ -170,8 +307,8 @@ class _AboutScreenState extends State<AboutScreen> {
           const SiftRule(),
           const SizedBox(height: 16),
           Text(
-            'Built as a standalone, ad-free application. No account, no subscription, '
-            'no “upgrade to remove ads.” If you find a bug, the source is public.',
+            'A standalone, ad-free application. No account, no subscription, and no '
+            'paid tier. The source is public.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: p.faint,
                   height: 1.6,
@@ -183,7 +320,7 @@ class _AboutScreenState extends State<AboutScreen> {
             'Package io.github.asomkhattak.sift',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: p.faint,
-                  fontSize: 8,
+                  fontSize: 11,
                 ),
           ),
         ],
@@ -216,8 +353,8 @@ class _FactRow extends StatelessWidget {
             height: 32,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              border: Border.all(color: p.lineStrong),
-              borderRadius: BorderRadius.circular(SiftRadius.xs),
+              color: p.surfaceRaised,
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, size: 16, color: p.mossDeep),
           ),

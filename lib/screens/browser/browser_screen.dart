@@ -510,7 +510,10 @@ class _BrowserScreenState extends State<BrowserScreen> {
             cacheEnabled: !settings.privateBrowsing,
             clearCache: settings.privateBrowsing,
             geolocationEnabled: false,
-            mediaPlaybackRequiresUserGesture: true,
+            // Media tapped by the user should start without a second synthetic
+            // gesture requirement, which Android WebView otherwise adds on top
+            // of the tap that opened the page.
+            mediaPlaybackRequiresUserGesture: false,
             allowsBackForwardNavigationGestures: true,
             domStorageEnabled: true,
             databaseEnabled: true,
@@ -834,7 +837,7 @@ class _FindBar extends StatelessWidget {
             '$matches',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: p.faint,
-                  fontSize: 9,
+                  fontSize: 11,
                 ),
           ),
           SiftIconButton(
@@ -979,7 +982,6 @@ class _StartPage extends StatelessWidget {
           ),
           const SizedBox(height: 27),
           const SiftSectionHead(
-            kicker: 'A FEW DOORS',
             title: 'Places worth reading',
             bottomPadding: 8,
           ),
@@ -1135,7 +1137,7 @@ class _TabsSheet extends StatelessWidget {
                             style:
                                 Theme.of(context).textTheme.labelSmall?.copyWith(
                                       color: p.faint,
-                                      fontSize: 8,
+                                      fontSize: 11,
                                     ),
                           ),
                         ],
@@ -1213,7 +1215,7 @@ class _BrowserMenu extends StatelessWidget {
                     'Reading the page…',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: p.faint,
-                          fontSize: 9,
+                          fontSize: 11.5,
                         ),
                   ),
                 ],
@@ -1314,7 +1316,7 @@ class _Action extends StatelessWidget {
                       note!,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: p.faint,
-                            fontSize: 8,
+                            fontSize: 11.5,
                             height: 1.5,
                           ),
                     ),
@@ -1446,7 +1448,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             '${domainOf(widget.url)} · ${_minutes < 1 ? 1 : _minutes} min read',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: p.faint,
-                  fontSize: 9,
+                  fontSize: 11.5,
                 ),
           ),
           const SizedBox(height: 20),

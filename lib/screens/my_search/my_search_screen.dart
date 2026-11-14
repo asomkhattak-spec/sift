@@ -244,19 +244,10 @@ class MySearchScreenState extends State<MySearchScreen> {
                 ),
               ),
             SiftPageTitle(
-              kicker: 'A SEARCH ENGINE OF YOUR OWN',
               title: 'My Search',
               subtitle:
-                  'Sift keeps a private full-text index on this phone. Add pages '
-                  'you trust, write notes, and search them with typo tolerance and '
-                  'local BM25 ranking — no query leaves the device.',
-              actions: [
-                SiftIconButton(
-                  icon: Icons.note_add_outlined,
-                  tooltip: 'Write a note',
-                  onPressed: _addNote,
-                ),
-              ],
+                  'A private full-text index of pages and notes you add. '
+                  'Ranking and typo matching run entirely on this phone.',
               bottom: 18,
             ),
             SiftSearchBar(
@@ -266,44 +257,64 @@ class MySearchScreenState extends State<MySearchScreen> {
               onSubmitted: _runSearch,
             ),
             const SizedBox(height: 13),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 13),
+              decoration: BoxDecoration(
+                color: p.surfaceRaised,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _Stat(
+                      value: _services.settings.starterIndexEnabled
+                          ? _index.starterCount.toString()
+                          : '0',
+                      label: 'starter entries',
+                    ),
+                  ),
+                  Container(width: 1, height: 30, color: p.line),
+                  Expanded(
+                    child: _Stat(
+                      value: _index.customCount.toString(),
+                      label: 'your pages',
+                    ),
+                  ),
+                  Container(width: 1, height: 30, color: p.line),
+                  Expanded(
+                    child: _Stat(
+                      value: _index.usesNativeCore ? 'Rust' : 'Dart',
+                      label: 'ranking core',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
             Row(
               children: [
                 Expanded(
-                  child: _Stat(
-                    value: _services.settings.starterIndexEnabled
-                        ? _index.starterCount.toString()
-                        : '0',
-                    label: 'shelf entries',
+                  child: SiftButton(
+                    label: 'Index a page',
+                    icon: Icons.add_link_rounded,
+                    compact: true,
+                    busy: _indexing,
+                    onPressed: _indexing ? null : _addPage,
                   ),
                 ),
-                Container(width: 1, height: 30, color: p.line),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: _Stat(
-                    value: _index.customCount.toString(),
-                    label: 'your pages',
-                  ),
-                ),
-                Container(width: 1, height: 30, color: p.line),
-                Expanded(
-                  child: _Stat(
-                    value: _index.usesNativeCore ? 'RUST' : 'DART',
-                    label: 'ranking core',
+                  child: SiftButton(
+                    label: 'Write a note',
+                    icon: Icons.note_add_outlined,
+                    tone: SiftButtonTone.line,
+                    compact: true,
+                    onPressed: _addNote,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 15),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: SiftButton(
-                label: 'Index a page',
-                icon: Icons.add_link_rounded,
-                compact: true,
-                busy: _indexing,
-                onPressed: _indexing ? null : _addPage,
-              ),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 22),
             const SiftRule(),
             const SizedBox(height: 13),
             Row(
@@ -440,16 +451,17 @@ class _Stat extends StatelessWidget {
         Text(
           value,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: p.mossDeep,
-                fontSize: 17,
+                color: p.ink,
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
               ),
         ),
         const SizedBox(height: 2),
         Text(
           label,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: p.faint,
-                fontSize: 8.5,
+                color: p.muted,
+                fontSize: 11,
               ),
         ),
       ],
@@ -478,8 +490,7 @@ class _CustomPages extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SiftSectionHead(
-            kicker: 'YOUR CORPUS',
-            title: 'Pages you trust',
+            title: 'Your pages',
             bottomPadding: 4,
           ),
           SiftEmpty(
@@ -502,8 +513,7 @@ class _CustomPages extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SiftSectionHead(
-          kicker: 'YOUR CORPUS',
-          title: 'Pages you trust',
+          title: 'Your pages',
           action: 'Add another',
           onAction: onAdd,
           bottomPadding: 4,
@@ -546,7 +556,7 @@ class _CustomPages extends StatelessWidget {
                           style:
                               Theme.of(context).textTheme.labelSmall?.copyWith(
                                     color: p.faint,
-                                    fontSize: 8.5,
+                                    fontSize: 11,
                                   ),
                         ),
                       ],
@@ -586,23 +596,30 @@ class _ShelfPreview extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SiftSectionHead(
-          kicker: 'THE STARTER SHELF',
-          title: 'A small, chosen reference',
-          bottomPadding: 8,
+          title: 'Starter shelf',
+          bottomPadding: 6,
         ),
         Text(
-          'Curated summaries with links to the original sources. Toggle the shelf '
-          'off in Settings if you only want your own pages.',
+          'Curated reference summaries with links to their original sources. '
+          'Turn the shelf off in Settings if you only want your own pages.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: p.muted,
                 height: 1.5,
+                fontSize: 13,
               ),
         ),
         const SizedBox(height: 15),
         for (final entry in sections.entries) ...[
           Padding(
-            padding: const EdgeInsets.only(top: 4, bottom: 7),
-            child: SiftKicker(entry.key),
+            padding: const EdgeInsets.only(top: 8, bottom: 5),
+            child: Text(
+              entry.key,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: p.mossDeep,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
           ),
           for (final document in entry.value.take(3))
             InkWell(

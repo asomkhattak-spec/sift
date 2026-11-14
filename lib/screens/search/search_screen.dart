@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/models/library_models.dart';
 import '../../core/models/search_models.dart';
+import '../../core/ota/update_service.dart';
 import '../../core/search/local_index.dart';
 import '../../core/services/sift_scope.dart';
 import '../../core/theme/sift_theme.dart';
@@ -57,11 +58,12 @@ class SearchScreenState extends State<SearchScreen> {
     _services = SiftScope.readServicesOf(context);
     _controller.addListener(_onTextChanged);
     _focus.addListener(_onFocusChanged);
+    _services.remoteUi.addListener(_onRemoteUiChanged);
     _loadShelf();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _services.settings.isFirstRun) return;
-      if (_query.isEmpty && _controller.text.isEmpty) _focus.requestFocus();
-    });
+  }
+
+  void _onRemoteUiChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -69,6 +71,7 @@ class SearchScreenState extends State<SearchScreen> {
     _suggestTimer?.cancel();
     _controller.removeListener(_onTextChanged);
     _focus.removeListener(_onFocusChanged);
+    _services.remoteUi.removeListener(_onRemoteUiChanged);
     _controller.dispose();
     _focus.dispose();
     _scroll.dispose();
@@ -196,7 +199,9 @@ class SearchScreenState extends State<SearchScreen> {
     _controller.selection =
         TextSelection.collapsed(offset: _controller.text.length);
     unawaited(_services.library.recordQuery(query));
-    await _performSearch(SearchVertical.all, query: query);
+    // Keep the active vertical: switching to Images and then editing the
+    // query should reload Images, not bounce back to All.
+    await _performSearch(_vertical, query: query);
   }
 
   Future<void> _performSearch(
@@ -342,6 +347,7 @@ class SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final settings = _services.settings;
+    final ui = _services.remoteUi.config;
     final compactHeader = _hasSearched || _showSuggestions;
     void openSources() {
       Navigator.of(context).push(
@@ -371,6 +377,8 @@ class SearchScreenState extends State<SearchScreen> {
                 onSubmitted: _submit,
                 localOnly: settings.localOnlyMode,
                 compact: compactHeader,
+                tagline: ui.tagline,
+                dense: ui.compactHome,
                 onSources: openSources,
                 onPrivacy: openPrivacy,
                 onSettings: () => Navigator.of(context).push(
@@ -406,6 +414,7 @@ class SearchScreenState extends State<SearchScreen> {
   Widget _buildBody(bool rememberActivity) {
     if (!_hasSearched) {
       final settings = _services.settings;
+      final ui = _services.remoteUi.config;
       return _Landing(
         key: const ValueKey('landing'),
         shelf: _shelf,
@@ -414,6 +423,10 @@ class SearchScreenState extends State<SearchScreen> {
             ? _services.library.recentQueries(limit: 4)
             : const [],
         localOnly: settings.localOnlyMode,
+        starters: ui.starters,
+        showShortcuts: ui.showShortcuts && widget.onOpenTab != null,
+        showPrivacyCard: ui.showPrivacyCard,
+        dense: ui.compactHome,
         onQuery: _submit,
         onToggleLocalOnly: () {
           settings.localOnlyMode = !settings.localOnlyMode;
@@ -484,7 +497,7 @@ class SearchScreenState extends State<SearchScreen> {
                                 .labelSmall
                                 ?.copyWith(
                                   color: context.sift.faint,
-                                  fontSize: 9,
+                                  fontSize: 11.5,
                                 ),
                           ),
                         ],
@@ -540,6 +553,24 @@ class SearchScreenState extends State<SearchScreen> {
                   ),
                   onLongPress: (result) =>
                       showResultActions(context, result),
+                ),
+              ),
+            ),
+          if (bundle != null &&
+              (_vertical == SearchVertical.images ||
+                  _vertical == SearchVertical.videos) &&
+              bundle.forVertical(_vertical).isNotEmpty)
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                SiftSpace.page,
+                2,
+                SiftSpace.page,
+                0,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: _MediaSummary(
+                  count: bundle.forVertical(_vertical).length,
+                  vertical: _vertical,
                 ),
               ),
             ),
@@ -604,26 +635,14 @@ class SearchScreenState extends State<SearchScreen> {
           SiftSpace.page,
           0,
         ),
-        sliver: SliverGrid(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: MediaQuery.sizeOf(context).width > 620
-                ? 4
-                : MediaQuery.sizeOf(context).width > 380
-                    ? 3
-                    : 2,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 16,
-            childAspectRatio: 0.68,
-          ),
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final result = results[index];
-              return ImageResultTile(
-                result: result,
-                onTap: () => showImagePreview(context, result),
-              );
-            },
-            childCount: results.length,
+        sliver: SliverToBoxAdapter(
+          child: _ImageMasonry(
+            results: results,
+            onOpen: (index) => showImageViewer(
+              context,
+              results,
+              initialIndex: index,
+            ),
           ),
         ),
       );
@@ -641,6 +660,7 @@ class SearchScreenState extends State<SearchScreen> {
           ),
         ResultKind.video => VideoResultTile(
             result: result,
+            compact: _vertical != SearchVertical.videos,
             onTap: tap,
             onLongPress: longPress,
           ),
@@ -681,7 +701,7 @@ class SearchScreenState extends State<SearchScreen> {
                 bottomPadding: 10,
               ),
               SizedBox(
-                height: 152,
+                height: 140,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: images.length,
@@ -692,7 +712,12 @@ class SearchScreenState extends State<SearchScreen> {
                       width: 132,
                       child: ImageResultTile(
                         result: result,
-                        onTap: () => showImagePreview(context, result),
+                        caption: false,
+                        onTap: () => showImageViewer(
+                          context,
+                          images,
+                          initialIndex: index,
+                        ),
                       ),
                     );
                   },
@@ -729,6 +754,92 @@ class SearchScreenState extends State<SearchScreen> {
   }
 }
 
+class _MediaSummary extends StatelessWidget {
+  const _MediaSummary({required this.count, required this.vertical});
+
+  final int count;
+  final SearchVertical vertical;
+
+  @override
+  Widget build(BuildContext context) {
+    final noun = vertical == SearchVertical.images ? 'image' : 'video';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        count == 1 ? '1 $noun' : '$count ${noun}s',
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: context.sift.faint,
+              fontSize: 11.5,
+            ),
+      ),
+    );
+  }
+}
+
+/// A two-to-four column masonry built without a package. Column heights are
+/// estimated from each image's real dimensions, so panoramas and portraits
+/// interlock instead of leaving holes in a fixed grid.
+class _ImageMasonry extends StatelessWidget {
+  const _ImageMasonry({required this.results, required this.onOpen});
+
+  final List<SearchResult> results;
+  final ValueChanged<int> onOpen;
+
+  static double _ratioFor(SearchResult result) {
+    final width = result.meta['width'];
+    final height = result.meta['height'];
+    if (width is num && height is num && width > 0 && height > 0) {
+      return (height / width).clamp(0.62, 1.55).toDouble();
+    }
+    return 1;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final columns = width >= 760
+        ? 4
+        : width >= 520
+            ? 3
+            : 2;
+    const gap = 10.0;
+    final buckets = List.generate(columns, (_) => <int>[]);
+    final heights = List.filled(columns, 0.0);
+    for (var index = 0; index < results.length; index++) {
+      var shortest = 0;
+      for (var column = 1; column < columns; column++) {
+        if (heights[column] < heights[shortest]) shortest = column;
+      }
+      buckets[shortest].add(index);
+      // Image ratio plus the caption block, expressed in column widths.
+      heights[shortest] += _ratioFor(results[index]) + 0.46;
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var column = 0; column < columns; column++) ...[
+          if (column > 0) const SizedBox(width: gap),
+          Expanded(
+            child: Column(
+              children: [
+                for (final index in buckets[column])
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: ImageResultTile(
+                      result: results[index],
+                      aspectRatio: _ratioFor(results[index]),
+                      onTap: () => onOpen(index),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 class _Header extends StatelessWidget {
   const _Header({
     required this.controller,
@@ -736,6 +847,8 @@ class _Header extends StatelessWidget {
     required this.onSubmitted,
     required this.localOnly,
     required this.compact,
+    required this.tagline,
+    required this.dense,
     required this.onSources,
     required this.onPrivacy,
     required this.onSettings,
@@ -746,6 +859,8 @@ class _Header extends StatelessWidget {
   final ValueChanged<String> onSubmitted;
   final bool localOnly;
   final bool compact;
+  final String tagline;
+  final bool dense;
   final VoidCallback onSources;
   final VoidCallback onPrivacy;
   final VoidCallback onSettings;
@@ -802,7 +917,7 @@ class _Header extends StatelessWidget {
                 Icon(Icons.lock_outline_rounded, size: 15, color: p.faint),
                 const SizedBox(width: 6),
                 Text(
-                  'No ads · No account',
+                  'Private search',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: p.muted,
                         fontSize: 12,
@@ -827,8 +942,23 @@ class _Header extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            const Center(child: SiftWordmark(size: 62)),
-            const SizedBox(height: 18),
+            Center(child: SiftWordmark(size: dense ? 50 : 60)),
+            const SizedBox(height: 9),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                tagline,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: p.muted,
+                      fontSize: dense ? 11.5 : 12.5,
+                      height: 1.4,
+                    ),
+              ),
+            ),
+            SizedBox(height: dense ? 12 : 17),
           ],
           SiftSearchBar(
             controller: controller,
@@ -840,6 +970,196 @@ class _Header extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _UpdateCard extends StatelessWidget {
+  const _UpdateCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final services = SiftScope.servicesOf(context);
+    final updates = services.updates;
+    return AnimatedBuilder(
+      animation: updates,
+      builder: (context, _) {
+        final update = updates.manifest;
+        if (update == null || !updates.cardVisible) {
+          return const SizedBox.shrink();
+        }
+        final p = context.sift;
+        final downloading = updates.phase == UpdatePhase.downloading;
+        final installing = updates.phase == UpdatePhase.installing;
+        final downloaded = updates.hasDownloaded;
+        final percent = (updates.progress * 100).round().clamp(0, 100);
+        final primaryLabel = downloaded ? 'Install update' : 'Update now';
+        return Padding(
+          padding: const EdgeInsets.only(top: 14),
+          child: Container(
+            decoration: BoxDecoration(
+              color: p.surface,
+              borderRadius: BorderRadius.circular(SiftRadius.lg),
+              border: Border.all(color: p.line, width: 0.8),
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 15, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: p.mossWash,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.system_update_alt_rounded,
+                        size: 19,
+                        color: p.moss,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Sift ${update.versionName} is available',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(
+                                  color: p.ink,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '${update.sizeLabel} · You have '
+                            '${updates.installedName}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: p.muted,
+                                  fontSize: 12,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (update.notes.isNotEmpty) ...[
+                  const SizedBox(height: 11),
+                  Text(
+                    update.notes,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: p.inkSoft,
+                          fontSize: 12.5,
+                          height: 1.5,
+                        ),
+                  ),
+                ],
+                if (downloading) ...[
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Text(
+                        'Downloading',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: p.inkSoft,
+                              fontSize: 12,
+                            ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '$percent%',
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: p.muted,
+                              fontSize: 11.5,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 7),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(SiftRadius.pill),
+                    child: LinearProgressIndicator(
+                      value: updates.progress > 0 ? updates.progress : null,
+                      minHeight: 3,
+                      backgroundColor: p.line,
+                      valueColor: AlwaysStoppedAnimation<Color>(p.moss),
+                    ),
+                  ),
+                ],
+                if (updates.error != null) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    updates.error!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: p.danger,
+                          fontSize: 12.2,
+                          height: 1.45,
+                        ),
+                  ),
+                  if (updates.needsPermission)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: SiftTextAction(
+                        label: 'Open install settings',
+                        icon: Icons.open_in_new_rounded,
+                        onTap: updates.openInstallPermission,
+                      ),
+                    ),
+                ],
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    if (downloading)
+                      SiftTextAction(
+                        label: 'Cancel update',
+                        icon: null,
+                        onTap: updates.cancelDownload,
+                      )
+                    else ...[
+                      SiftButton(
+                        label: installing ? 'Installing…' : primaryLabel,
+                        compact: true,
+                        busy: installing,
+                        onPressed: installing
+                            ? null
+                            : downloaded
+                                ? updates.installDownloaded
+                                : updates.downloadAndInstall,
+                      ),
+                      const Spacer(),
+                      SiftTextAction(
+                        label: 'Update later',
+                        icon: null,
+                        onTap: updates.later,
+                      ),
+                      const SizedBox(width: 12),
+                      SiftTextAction(
+                        label: 'Dismiss',
+                        icon: null,
+                        onTap: updates.dismiss,
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -1078,6 +1398,10 @@ class _Landing extends StatelessWidget {
     required this.shelfLoaded,
     required this.recent,
     required this.localOnly,
+    required this.starters,
+    required this.showShortcuts,
+    required this.showPrivacyCard,
+    required this.dense,
     required this.onQuery,
     required this.onToggleLocalOnly,
     required this.onOpenSources,
@@ -1091,6 +1415,10 @@ class _Landing extends StatelessWidget {
   final bool shelfLoaded;
   final List<HistoryEntry> recent;
   final bool localOnly;
+  final List<String> starters;
+  final bool showShortcuts;
+  final bool showPrivacyCard;
+  final bool dense;
   final ValueChanged<String> onQuery;
   final VoidCallback onToggleLocalOnly;
   final VoidCallback onOpenSources;
@@ -1101,16 +1429,10 @@ class _Landing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.sift;
-    const starters = [
-      'Rust ownership',
-      'How does a heat pump work?',
-      'Open source maps',
-      'Best time to visit Japan',
-    ];
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         SiftSpace.page,
-        12,
+        dense ? 6 : 12,
         SiftSpace.page,
         28,
       ),
@@ -1133,14 +1455,13 @@ class _Landing extends StatelessWidget {
             ),
           ],
         ),
-        if (onOpenTab != null) ...[
-          const SizedBox(height: 18),
+        const _UpdateCard(),
+        if (showShortcuts) ...[
+          SizedBox(height: dense ? 12 : 18),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-            decoration: BoxDecoration(
-              color: p.surface,
-              border: Border.all(color: p.line),
-              borderRadius: BorderRadius.circular(SiftRadius.lg),
+            padding: EdgeInsets.symmetric(
+              horizontal: 0,
+              vertical: dense ? 4 : 8,
             ),
             child: Row(
               children: [
@@ -1180,94 +1501,105 @@ class _Landing extends StatelessWidget {
             ),
           ),
         ],
-        const SizedBox(height: 12),
-        Material(
-          color: p.surface,
-          borderRadius: BorderRadius.circular(SiftRadius.lg),
-          child: InkWell(
-            onTap: onOpenPrivacy,
+        if (showPrivacyCard) ...[
+          SizedBox(height: dense ? 8 : 12),
+          Material(
+            color: p.surface,
             borderRadius: BorderRadius.circular(SiftRadius.lg),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(15, 15, 11, 15),
-              decoration: BoxDecoration(
-                border: Border.all(color: p.line),
-                borderRadius: BorderRadius.circular(SiftRadius.lg),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: p.mossWash,
-                      shape: BoxShape.circle,
+            child: InkWell(
+              onTap: onOpenPrivacy,
+              borderRadius: BorderRadius.circular(SiftRadius.lg),
+              child: Container(
+                padding: EdgeInsets.fromLTRB(
+                  15,
+                  dense ? 13 : 15,
+                  11,
+                  dense ? 13 : 15,
+                ),
+                decoration: BoxDecoration(
+                  color: p.mossWash,
+                  borderRadius: BorderRadius.circular(SiftRadius.lg),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: p.surface,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.verified_user_outlined,
+                        size: 21,
+                        color: p.moss,
+                      ),
                     ),
-                    child: Icon(
-                      Icons.verified_user_outlined,
-                      size: 21,
-                      color: p.moss,
+                    const SizedBox(width: 13),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Private by default',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(
+                                  color: p.ink,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'No account, no ad server. Only the sources you '
+                            'keep switched on ever see a query.',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: p.muted,
+                                      fontSize: 12.5,
+                                      height: 1.45,
+                                    ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 13),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Private by default',
-                          style:
-                              Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    color: p.ink,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'No account, no ad server. Only the sources you keep '
-                          'switched on ever see a query.',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: p.muted,
-                                    fontSize: 12.5,
-                                    height: 1.45,
-                                  ),
-                        ),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Icon(
+                        Icons.chevron_right_rounded,
+                        size: 20,
+                        color: p.faint,
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Icon(
-                      Icons.chevron_right_rounded,
-                      size: 20,
-                      color: p.faint,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'Try a search',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: p.ink,
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-              ),
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final starter in starters)
-              _QueryChip(label: starter, onTap: () => onQuery(starter)),
-          ],
-        ),
+        ],
+        if (starters.isNotEmpty) ...[
+          SizedBox(height: dense ? 18 : 24),
+          Text(
+            'Try a search',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: p.ink,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final starter in starters)
+                _QueryChip(label: starter, onTap: () => onQuery(starter)),
+            ],
+          ),
+        ],
         if (recent.isNotEmpty) ...[
           const SizedBox(height: 26),
           Row(
@@ -1295,8 +1627,7 @@ class _Landing extends StatelessWidget {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: p.surface,
-              border: Border.all(color: p.line),
+              color: p.surfaceRaised,
               borderRadius: BorderRadius.circular(SiftRadius.lg),
             ),
             child: Column(
@@ -1451,11 +1782,7 @@ class _QueryChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(SiftRadius.pill),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(12, 9, 13, 9),
-          decoration: BoxDecoration(
-            border: Border.all(color: p.line),
-            borderRadius: BorderRadius.circular(SiftRadius.pill),
-          ),
+          padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1465,7 +1792,7 @@ class _QueryChip extends StatelessWidget {
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: p.inkSoft,
-                      fontSize: 12.5,
+                      fontSize: 13,
                     ),
               ),
             ],
@@ -1488,29 +1815,24 @@ class _ShelfCard extends StatelessWidget {
     return SizedBox(
       width: 236,
       child: Material(
-        color: p.surface,
+        color: p.surfaceRaised,
         borderRadius: BorderRadius.circular(SiftRadius.lg),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(SiftRadius.lg),
           child: Container(
             padding: const EdgeInsets.fromLTRB(14, 13, 14, 12),
-            decoration: BoxDecoration(
-              border: Border.all(color: p.line),
-              borderRadius: BorderRadius.circular(SiftRadius.lg),
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  document.section.toUpperCase(),
+                  document.section,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: p.mossDeep,
-                        fontSize: 9,
+                        fontSize: 11.5,
                         fontWeight: FontWeight.w500,
-                        letterSpacing: 0.7,
                       ),
                 ),
                 const SizedBox(height: 7),
@@ -1801,8 +2123,8 @@ class _SourceStatusSheet extends StatelessWidget {
                           style:
                               Theme.of(context).textTheme.labelSmall?.copyWith(
                                     color: p.faint,
-                                    fontSize: 8.5,
-                                    letterSpacing: 0.2,
+                                    fontSize: 11,
+                                    letterSpacing: 0.1,
                                   ),
                         ),
                       ],
@@ -1813,7 +2135,7 @@ class _SourceStatusSheet extends StatelessWidget {
                       status.host!,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: p.faint,
-                            fontSize: 8,
+                            fontSize: 11,
                           ),
                     ),
                 ],

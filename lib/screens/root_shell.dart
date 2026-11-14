@@ -21,7 +21,7 @@ class RootShell extends StatefulWidget {
   State<RootShell> createState() => _RootShellState();
 }
 
-class _RootShellState extends State<RootShell> {
+class _RootShellState extends State<RootShell> with WidgetsBindingObserver {
   final _searchKey = GlobalKey<SearchScreenState>();
   final _discoverKey = GlobalKey<DiscoverScreenState>();
   final _mySearchKey = GlobalKey<MySearchScreenState>();
@@ -36,6 +36,7 @@ class _RootShellState extends State<RootShell> {
   void initState() {
     super.initState();
     _services = SiftScope.readServicesOf(context);
+    WidgetsBinding.instance.addObserver(this);
     _services.searchBus.addListener(_onExternalSearch);
     _intentSubscription = _services.native.intents.listen(_handleIntent);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -46,9 +47,23 @@ class _RootShellState extends State<RootShell> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _services.searchBus.removeListener(_onExternalSearch);
     _intentSubscription?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    // The system installer runs outside Sift. On return, adopt the new build
+    // if Android replaced the APK, and refresh a stale interface bundle.
+    unawaited(_services.updates.reconcileInstalledVersion());
+    final checked = _services.remoteUi.lastChecked;
+    if (checked == null ||
+        DateTime.now().difference(checked) > const Duration(hours: 6)) {
+      unawaited(_services.remoteUi.refresh());
+    }
   }
 
   void _onExternalSearch() {
@@ -248,7 +263,7 @@ class _BottomItem extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: color,
-                    fontSize: 10,
+                    fontSize: 11,
                     letterSpacing: 0,
                     fontWeight:
                         selected ? FontWeight.w500 : FontWeight.w400,

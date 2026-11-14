@@ -68,7 +68,7 @@ class LegalScreen extends StatelessWidget {
                 'Last updated with this release. This is the complete text.',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: p.faint,
-                      fontSize: 8.5,
+                      fontSize: 11.5,
                     ),
               ),
               const SizedBox(height: 18),

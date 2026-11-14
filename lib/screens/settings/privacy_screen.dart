@@ -109,8 +109,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
           ),
           const SizedBox(height: 25),
           const SiftSectionHead(
-            kicker: 'WHAT LEAVES THE PHONE',
-            title: 'Only the query you send',
+            title: 'What leaves the phone',
             bottomPadding: 8,
           ),
           _DataRow(
@@ -140,8 +139,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
           ),
           const SizedBox(height: 25),
           const SiftSectionHead(
-            kicker: 'CONTROLS',
-            title: 'Reduce what is retained',
+            title: 'Privacy controls',
             bottomPadding: 8,
           ),
           _Toggle(
@@ -187,15 +185,13 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
           ),
           const SizedBox(height: 24),
           const SiftSectionHead(
-            kicker: 'YOUR LOCAL RECORD',
-            title: 'Inspect and erase',
+            title: 'Local data',
             bottomPadding: 8,
           ),
           Container(
             decoration: BoxDecoration(
-              color: p.surface,
-              border: Border.all(color: p.line),
-              borderRadius: BorderRadius.circular(SiftRadius.sm),
+              color: p.surfaceRaised,
+              borderRadius: BorderRadius.circular(14),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 15),
             child: Column(
@@ -253,7 +249,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.eco_outlined, size: 16, color: p.moss),
+              Icon(Icons.lock_outline_rounded, size: 16, color: p.faint),
               const SizedBox(width: 9),
               Expanded(
                 child: Text(
@@ -262,7 +258,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: p.faint,
                         height: 1.55,
-                        fontSize: 11,
+                        fontSize: 12,
                       ),
                 ),
               ),
@@ -301,9 +297,7 @@ class _Callout extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(15, 14, 15, 15),
       decoration: BoxDecoration(
         color: p.mossWash,
-        border: Border(
-          left: BorderSide(color: p.moss, width: 3),
-        ),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

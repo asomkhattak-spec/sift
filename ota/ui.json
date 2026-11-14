@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "accent": "#1a73e8",
+  "tagline": "No ads. No account. No profile.",
+  "starters": [
+    "Rust ownership",
+    "How does a heat pump work?",
+    "Open source maps",
+    "Best time to visit Japan"
+  ],
+  "show_shortcuts": true,
+  "show_privacy_card": true,
+  "compact_home": false
+}

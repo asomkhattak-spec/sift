@@ -8,6 +8,7 @@ const Set<String> kDefaultEnabledSources = {
   'wikipedia',
   'gnews',
   'openverse',
+  'commons',
   'dailymotion',
   'hackernews',
   'stackexchange',
@@ -37,6 +38,7 @@ class SettingsService extends ChangeNotifier {
   static const _kProxyPort = 'sift.proxyPort';
   static const _kSerifHeadings = 'sift.serifHeadings';
   static const _kTextScale = 'sift.textScale';
+  static const _kRemoteUi = 'sift.remoteUi';
   static const _kLanguage = 'sift.language';
   static const _kSources = 'sift.sources';
   static const _kSearxUrl = 'sift.searxUrl';
@@ -170,6 +172,15 @@ class SettingsService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Small, validated interface bundles fetched from Sift's update service.
+  /// Turning this off restores the interface shipped inside the APK.
+  bool get remoteUiEnabled => _prefs.getBool(_kRemoteUi) ?? true;
+  set remoteUiEnabled(bool value) {
+    if (remoteUiEnabled == value) return;
+    _prefs.setBool(_kRemoteUi, value);
+    notifyListeners();
+  }
+
   String get language => _prefs.getString(_kLanguage) ?? 'en';
   set language(String value) {
     if (language == value) return;
@@ -264,6 +275,7 @@ class SettingsService extends ChangeNotifier {
         'proxyPort': proxyPort,
         'serifHeadings': serifHeadings,
         'textScale': textScale,
+        'remoteUi': remoteUiEnabled,
         'localOnly': localOnlyMode,
         'sources': {
           for (final id in kDefaultEnabledSources)

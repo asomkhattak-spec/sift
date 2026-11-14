@@ -1,0 +1,12 @@
+{
+  "name": "sift-ota",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sift's interface-bundle and release-status service.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "check": "node --check api/ui.js && node --check api/update.js && node --check app.js"
+  }
+}

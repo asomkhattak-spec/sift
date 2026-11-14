@@ -124,7 +124,6 @@ class _SourcesScreenState extends State<SourcesScreen> {
           const SiftRule(),
           const SizedBox(height: 20),
           const SiftSectionHead(
-            kicker: 'CUSTOM ENDPOINT',
             title: 'Connect your own SearXNG',
             bottomPadding: 8,
           ),
@@ -195,9 +194,8 @@ class _SourceCard extends StatelessWidget {
     final p = context.sift;
     return Container(
       decoration: BoxDecoration(
-        color: p.surface,
-        border: Border.all(color: enabled ? p.lineStrong : p.line),
-        borderRadius: BorderRadius.circular(SiftRadius.sm),
+        color: p.surfaceRaised,
+        borderRadius: BorderRadius.circular(14),
       ),
       padding: const EdgeInsets.fromLTRB(14, 13, 10, 14),
       child: Column(
@@ -223,8 +221,8 @@ class _SourceCard extends StatelessWidget {
                         if (source.isCustom) ...[
                           const SizedBox(width: 7),
                           SiftBadge(
-                            'CUSTOM',
-                            background: p.surfaceRaised,
+                            'Custom',
+                            background: p.surface,
                           ),
                         ],
                       ],
@@ -234,7 +232,7 @@ class _SourceCard extends StatelessWidget {
                       source.host,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: p.faint,
-                            fontSize: 8.5,
+                            fontSize: 11,
                           ),
                     ),
                   ],
@@ -260,16 +258,16 @@ class _SourceCard extends StatelessWidget {
               for (final vertical in source.verticals)
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
-                    border: Border.all(color: p.line),
-                    borderRadius: BorderRadius.circular(SiftRadius.xs),
+                    color: p.surface,
+                    borderRadius: BorderRadius.circular(SiftRadius.pill),
                   ),
                   child: Text(
-                    verticalLabel(vertical).toUpperCase(),
+                    verticalLabel(vertical),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: p.faint,
-                          fontSize: 7.5,
+                          color: p.muted,
+                          fontSize: 10.5,
                         ),
                   ),
                 ),
@@ -280,8 +278,8 @@ class _SourceCard extends StatelessWidget {
             source.privacyNote,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: p.faint,
-                  height: 1.5,
-                  fontSize: 10.5,
+                  height: 1.55,
+                  fontSize: 11.5,
                 ),
           ),
         ],
@@ -327,7 +325,7 @@ class _CoverageNote extends StatelessWidget {
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: p.muted,
                     height: 1.55,
-                    fontSize: 11,
+                    fontSize: 12,
                   ),
             ),
           ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../core/services/sift_scope.dart';
@@ -111,24 +113,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _Preamble(),
           const SizedBox(height: 22),
           _Section(
-            kicker: 'APPEARANCE',
-            title: 'A reading surface',
+            title: 'Appearance',
             children: [
               _ChoiceSetting(
                 label: 'Theme',
-                description: 'System follows your phone. Paper is the warm light theme; ink is the dark one.',
+                description: 'System follows your phone. Light and Dark apply inside Sift only.',
                 value: settings.themeMode,
                 options: const [
                   ('system', 'System'),
-                  ('light', 'Paper'),
-                  ('dark', 'Ink'),
+                  ('light', 'Light'),
+                  ('dark', 'Dark'),
                 ],
                 onChanged: _setTheme,
               ),
               const SiftRule(),
               _SwitchSetting(
                 label: 'Serif headlines',
-                description: 'Instrument Serif for display type, with IBM Plex Sans for reading.',
+                description: 'Use a serif face for large page headings. Body text and controls stay in Roboto.',
                 value: settings.serifHeadings,
                 onChanged: (value) => settings.serifHeadings = value,
               ),
@@ -144,11 +145,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 label2: '${(settings.textScale * 100).round()}%',
                 onChanged: (value) => settings.textScale = value,
               ),
+              const SiftRule(),
+              _SwitchSetting(
+                label: 'Interface updates',
+                description:
+                    'Check for small, data-only changes to the home screen and accent colour. '
+                    'They never add code or change your search settings, and the app works '
+                    'fully offline without them.',
+                value: settings.remoteUiEnabled,
+                onChanged: (value) {
+                  settings.remoteUiEnabled = value;
+                  if (value) unawaited(_services.remoteUi.refresh());
+                },
+              ),
             ],
           ),
           _Section(
-            kicker: 'SEARCH',
-            title: 'How results are assembled',
+            title: 'Search',
             children: [
               _SwitchSetting(
                 label: 'Safe search',
@@ -213,8 +226,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
           _Section(
-            kicker: 'BROWSER',
-            title: 'Pages, links, and watching',
+            title: 'Browsing',
             children: [
               _SwitchSetting(
                 label: 'Open results inside Sift',
@@ -266,8 +278,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
           _Section(
-            kicker: 'NETWORK',
-            title: 'Optional routing',
+            title: 'Network',
             children: [
               _SwitchSetting(
                 label: 'Route through a proxy',
@@ -321,8 +332,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
           _Section(
-            kicker: 'PRIVACY',
-            title: 'What this app can and cannot do',
+            title: 'Privacy & data',
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -369,8 +379,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
           _Section(
-            kicker: 'ABOUT',
-            title: 'A small, finished thing',
+            title: 'About',
             children: [
               _NavSetting(
                 label: 'About Sift',
@@ -447,12 +456,10 @@ class _Preamble extends StatelessWidget {
 
 class _Section extends StatelessWidget {
   const _Section({
-    required this.kicker,
     required this.title,
     required this.children,
   });
 
-  final String kicker;
   final String title;
   final List<Widget> children;
 
@@ -460,20 +467,27 @@ class _Section extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.sift;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 30),
+      padding: const EdgeInsets.only(bottom: 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SiftSectionHead(
-            kicker: kicker,
-            title: title,
-            bottomPadding: 9,
+          Padding(
+            padding: const EdgeInsets.only(left: 2),
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: p.ink,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: -0.2,
+                  ),
+            ),
           ),
+          const SizedBox(height: 10),
           Container(
             decoration: BoxDecoration(
-              color: p.surface,
-              border: Border.all(color: p.line),
-              borderRadius: BorderRadius.circular(SiftRadius.sm),
+              color: p.surfaceRaised,
+              borderRadius: BorderRadius.circular(14),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 15),
             child: Column(children: children),
@@ -597,7 +611,7 @@ class _ChoiceSetting extends StatelessWidget {
                       option.$2,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: value == option.$1 ? p.paper : p.inkSoft,
-                            fontSize: 9.5,
+                            fontSize: 11.5,
                           ),
                     ),
                   ),

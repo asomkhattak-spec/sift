@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import '../ota/remote_ui_service.dart';
+import '../ota/update_service.dart';
 import '../search/local_index.dart';
 import '../search/search_engine.dart';
 import 'http_service.dart';
@@ -25,6 +27,8 @@ class SiftServices {
     required this.blocker,
     required this.core,
     required this.searchBus,
+    required this.remoteUi,
+    required this.updates,
   });
 
   final SettingsService settings;
@@ -36,6 +40,8 @@ class SiftServices {
   final TrackerBlocker blocker;
   final SiftCore core;
   final SearchBus searchBus;
+  final RemoteUiService remoteUi;
+  final UpdateService updates;
 }
 
 class SiftScope extends InheritedWidget {

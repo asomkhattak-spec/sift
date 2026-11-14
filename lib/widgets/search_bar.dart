@@ -73,17 +73,17 @@ class _SiftSearchBarState extends State<SiftSearchBar> {
       decoration: BoxDecoration(
         color: p.surface,
         border: Border.all(
-          color: _focused ? p.moss : p.line,
+          color: _focused ? p.moss : p.line.withOpacity(0.82),
           width: _focused ? 1.5 : 1,
         ),
         borderRadius: BorderRadius.circular(SiftRadius.pill),
         boxShadow: [
           BoxShadow(
             color: p.isDark
-                ? const Color(0x33000000)
-                : const Color(0x141A73E8),
-            blurRadius: _focused ? 12 : 8,
-            offset: const Offset(0, 2),
+                ? const Color(0x2E000000)
+                : const Color(0x0F000000),
+            blurRadius: _focused ? 12 : 7,
+            offset: const Offset(0, 1),
           ),
         ],
       ),

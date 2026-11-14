@@ -5,6 +5,7 @@ import '../core/services/sift_scope.dart';
 import '../core/theme/sift_theme.dart';
 import '../core/utils/formatters.dart';
 import '../core/utils/navigation.dart';
+import '../screens/search/image_viewer_screen.dart';
 import 'sift_ui.dart';
 
 class _SourceMark extends StatelessWidget {
@@ -397,6 +398,7 @@ class VideoResultTile extends StatelessWidget {
     required this.result,
     this.onTap,
     this.onLongPress,
+    this.compact = false,
     super.key,
   });
 
@@ -404,124 +406,236 @@ class VideoResultTile extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
+  /// Compact rows keep the All tab dense; the Videos tab uses full-width
+  /// cards so the thumbnail and creator details carry the result.
+  final bool compact;
+
   @override
   Widget build(BuildContext context) {
-    final p = context.sift;
-    final thumb = result.thumbnailUrl ?? result.imageUrl;
     return InkWell(
       onTap: onTap,
       onLongPress: onLongPress,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 132,
-              height: 78,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _Thumb(
-                    url: thumb ?? '',
-                    width: 132,
-                    height: 78,
-                    radius: SiftRadius.md,
-                  ),
-                  Center(
-                    child: Container(
-                      width: 34,
-                      height: 34,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        color: Color(0xCC000000),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.play_arrow_rounded,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                  if (result.duration != null)
-                    Positioned(
-                      right: 5,
-                      bottom: 5,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 5,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xCC000000),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          result.duration!,
-                          style:
-                              Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    height: 1.1,
-                                  ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+      child: compact ? _compact(context) : _card(context),
+    );
+  }
+
+  Widget _compact(BuildContext context) {
+    final p = context.sift;
+    final thumb = result.thumbnailUrl ?? result.imageUrl;
+    final meta = [
+      if (result.author != null && result.author!.isNotEmpty) result.author!,
+      result.sourceName,
+    ].where((part) => part.isNotEmpty).join(' · ');
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 132,
+            height: 78,
+            child: _Poster(
+              url: thumb,
+              duration: result.duration,
+              playSize: 30,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  result.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: p.ink,
+                        fontSize: 15.5,
+                        height: 1.32,
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  meta,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: p.muted,
+                        fontSize: 12,
+                      ),
+                ),
+                if (result.publishedAt != null) ...[
+                  const SizedBox(height: 2),
                   Text(
-                    result.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: p.ink,
-                          fontSize: 15.5,
-                          height: 1.32,
-                          fontWeight: FontWeight.w500,
-                        ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    result.sourceName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    relativeDate(result.publishedAt),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: p.muted,
-                          fontSize: 12,
+                          color: p.faint,
+                          fontSize: 11.5,
                         ),
                   ),
-                  if (result.publishedAt != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      relativeDate(result.publishedAt),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: p.faint,
-                            fontSize: 11.5,
-                          ),
-                    ),
-                  ],
                 ],
-              ),
+              ],
             ),
-            IconButton(
-              tooltip: 'More actions',
-              onPressed: () => showResultActions(context, result),
-              icon: const Icon(Icons.more_vert_rounded, size: 19),
-              color: p.faint,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints.tightFor(width: 30, height: 30),
-              visualDensity: VisualDensity.compact,
+          ),
+          IconButton(
+            tooltip: 'More actions',
+            onPressed: () => showResultActions(context, result),
+            icon: const Icon(Icons.more_vert_rounded, size: 19),
+            color: p.faint,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(width: 30, height: 30),
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _card(BuildContext context) {
+    final p = context.sift;
+    final thumb = result.thumbnailUrl ?? result.imageUrl;
+    final source = [
+      result.author ?? '',
+      result.sourceName,
+      if (result.publishedAt != null) relativeDate(result.publishedAt),
+    ].where((part) => part.isNotEmpty).join(' · ');
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: _Poster(
+              url: thumb,
+              duration: result.duration,
+              playSize: 46,
+              radius: SiftRadius.md,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  result.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: p.ink,
+                        fontSize: 17,
+                        height: 1.32,
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'More actions',
+                onPressed: () => showResultActions(context, result),
+                icon: const Icon(Icons.more_vert_rounded, size: 20),
+                color: p.faint,
+                padding: EdgeInsets.zero,
+                constraints:
+                    const BoxConstraints.tightFor(width: 32, height: 32),
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            source,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: p.muted,
+                  fontSize: 12,
+                ),
+          ),
+          if (result.snippet.isNotEmpty) ...[
+            const SizedBox(height: 7),
+            Text(
+              result.snippet,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: p.inkSoft,
+                    fontSize: 13,
+                    height: 1.45,
+                  ),
             ),
           ],
-        ),
+        ],
       ),
+    );
+  }
+}
+
+/// Shared 16:9 poster used by video rows and cards.
+class _Poster extends StatelessWidget {
+  const _Poster({
+    required this.url,
+    required this.playSize,
+    this.duration,
+    this.radius = SiftRadius.sm,
+  });
+
+  final String? url;
+  final double playSize;
+  final String? duration;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        _Thumb(
+          url: url ?? '',
+          width: double.infinity,
+          height: double.infinity,
+          radius: radius,
+        ),
+        Center(
+          child: Container(
+            width: playSize,
+            height: playSize,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: Color(0xCC000000),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.play_arrow_rounded,
+              color: Colors.white,
+              size: playSize * 0.66,
+            ),
+          ),
+        ),
+        if (duration != null && duration!.isNotEmpty)
+          Positioned(
+            right: 6,
+            bottom: 6,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xCC000000),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                duration!,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10.5,
+                  height: 1.2,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -530,11 +644,21 @@ class ImageResultTile extends StatelessWidget {
   const ImageResultTile({
     required this.result,
     this.onTap,
+    this.aspectRatio = 1,
+    this.caption = true,
     super.key,
   });
 
   final SearchResult result;
   final VoidCallback? onTap;
+
+  /// Height divided by width, clamped by the caller so a portrait poster does
+  /// not turn a result column into a single tile.
+  final double aspectRatio;
+
+  /// The horizontal strip on the All tab shows images only; the Images tab
+  /// adds the attribution caption under every tile.
+  final bool caption;
 
   @override
   Widget build(BuildContext context) {
@@ -542,16 +666,16 @@ class ImageResultTile extends StatelessWidget {
     final image = result.thumbnailUrl ?? result.imageUrl;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(SiftRadius.md),
+      borderRadius: BorderRadius.circular(SiftRadius.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AspectRatio(
-            aspectRatio: 1,
+            aspectRatio: aspectRatio,
             child: Container(
               decoration: BoxDecoration(
                 color: p.surfaceRaised,
-                borderRadius: BorderRadius.circular(SiftRadius.md),
+                borderRadius: BorderRadius.circular(SiftRadius.sm),
               ),
               clipBehavior: Clip.antiAlias,
               child: image == null || image.isEmpty
@@ -560,8 +684,7 @@ class ImageResultTile extends StatelessWidget {
                       image,
                       fit: BoxFit.cover,
                       filterQuality: FilterQuality.low,
-                      errorBuilder: (_, __, ___) =>
-                          const _ImageFallback(),
+                      errorBuilder: (_, __, ___) => const _ImageFallback(),
                       loadingBuilder: (context, child, progress) {
                         if (progress == null) return child;
                         return Container(color: p.surfaceRaised);
@@ -569,27 +692,29 @@ class ImageResultTile extends StatelessWidget {
                     ),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            result.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: p.inkSoft,
-                  height: 1.35,
-                  fontSize: 12,
-                ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            result.meta['license']?.toString() ?? result.host,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: p.faint,
-                  fontSize: 10,
-                ),
-          ),
+          if (caption) ...[
+            const SizedBox(height: 6),
+            Text(
+              result.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: p.inkSoft,
+                    height: 1.35,
+                    fontSize: 12,
+                  ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              result.meta['license']?.toString() ?? result.host,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: p.faint,
+                    fontSize: 11,
+                  ),
+            ),
+          ],
         ],
       ),
     );
@@ -656,7 +781,7 @@ class AnswerCard extends StatelessWidget {
                       'Live',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: p.clay,
-                            fontSize: 10,
+                            fontSize: 11,
                             fontWeight: FontWeight.w500,
                           ),
                     ),
@@ -866,7 +991,7 @@ Future<void> showResultActions(BuildContext context, SearchResult result) async 
               overflow: TextOverflow.ellipsis,
               style: Theme.of(sheetContext).textTheme.labelSmall?.copyWith(
                     color: p.faint,
-                    fontSize: 9,
+                    fontSize: 11.5,
                   ),
             ),
             const SizedBox(height: 16),
@@ -966,89 +1091,8 @@ Future<void> _indexResult(BuildContext context, SearchResult result) async {
 Future<void> showImagePreview(
   BuildContext context,
   SearchResult result,
-) async {
-  final p = context.sift;
-  final imageUrl = result.imageUrl ?? result.thumbnailUrl;
-  await showSiftSheet<void>(
-    context,
-    builder: (sheetContext) => SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(
-        SiftSpace.page,
-        0,
-        SiftSpace.page,
-        MediaQuery.paddingOf(sheetContext).bottom + 18,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SiftSheetTitle(
-            title: 'Image',
-            subtitle: result.title,
-            trailing: SiftIconButton(
-              icon: Icons.close_rounded,
-              tooltip: 'Close',
-              onPressed: () => Navigator.of(sheetContext).pop(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            constraints: const BoxConstraints(maxHeight: 360),
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: p.surfaceRaised,
-              border: Border.all(color: p.line),
-              borderRadius: BorderRadius.circular(SiftRadius.sm),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: imageUrl == null || imageUrl.isEmpty
-                ? const SizedBox(height: 220, child: _ImageFallback())
-                : Image.network(
-                    imageUrl,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) =>
-                        const SizedBox(height: 220, child: _ImageFallback()),
-                  ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            [
-              result.meta['license']?.toString(),
-              result.meta['author']?.toString() ?? result.author,
-              result.sourceName,
-            ].whereType<String>().where((part) => part.isNotEmpty).join('  ·  '),
-            style: Theme.of(sheetContext).textTheme.labelSmall?.copyWith(
-                  color: p.faint,
-                  fontSize: 9,
-                ),
-          ),
-          const SizedBox(height: 18),
-          SiftButton(
-            label: 'Open source page',
-            icon: Icons.open_in_new_rounded,
-            expand: true,
-            onPressed: () {
-              Navigator.of(sheetContext).pop();
-              openSiftUrl(context, result.url, title: result.title);
-            },
-          ),
-          const SizedBox(height: 6),
-          Center(
-            child: SiftTextAction(
-              label: 'Save to library',
-              icon: null,
-              onTap: () async {
-                Navigator.of(sheetContext).pop();
-                await SiftScope.servicesOf(context).library.saveResult(result);
-                if (context.mounted) {
-                  showSiftToast(context, 'Saved to library');
-                }
-              },
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
+) {
+  return showImageViewer(context, [result]);
 }
 
 class _ActionResult extends StatelessWidget {
@@ -1183,8 +1227,6 @@ class EmptyResults extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SiftKicker('Nothing came back', color: p.clay),
-          const SizedBox(height: 12),
           Text(
             'No results for “$query”.',
             style: Theme.of(context).textTheme.headlineSmall,

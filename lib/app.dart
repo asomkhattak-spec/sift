@@ -22,11 +22,16 @@ class SiftApp extends StatefulWidget {
 
 class _SiftAppState extends State<SiftApp> {
   SettingsService get _settings => widget.services.settings;
+  late final Listenable _appearance;
   String? _webViewProxyKey;
 
   @override
   void initState() {
     super.initState();
+    _appearance = Listenable.merge([
+      _settings,
+      widget.services.remoteUi,
+    ]);
     _settings.addListener(_applySystemSettings);
     _applySystemSettings();
   }
@@ -99,8 +104,9 @@ class _SiftAppState extends State<SiftApp> {
     return SiftScope(
       services: widget.services,
       child: AnimatedBuilder(
-        animation: _settings,
+        animation: _appearance,
         builder: (context, _) {
+          final accent = widget.services.remoteUi.config.accent;
           return MaterialApp(
             title: 'Sift',
             debugShowCheckedModeBanner: false,
@@ -108,10 +114,12 @@ class _SiftAppState extends State<SiftApp> {
             theme: SiftTheme.build(
               Brightness.light,
               useSerif: _settings.serifHeadings,
+              accent: accent,
             ),
             darkTheme: SiftTheme.build(
               Brightness.dark,
               useSerif: _settings.serifHeadings,
+              accent: accent,
             ),
             scrollBehavior: const _SiftScrollBehavior(),
             builder: (context, child) {

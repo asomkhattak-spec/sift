@@ -23,6 +23,10 @@ abstract class SearchProvider {
 
   bool get supportsPaging => true;
 
+  /// Per-source ceiling. Feed endpoints answer in well under a second, while
+  /// image indexes and MediaWiki generators deserve a little more room.
+  Duration get timeout => const Duration(seconds: 6);
+
   Future<List<SearchResult>> search(SearchRequest request);
 }
 
@@ -193,6 +197,9 @@ class OpenverseProvider extends SearchProvider {
   OpenverseProvider(SiftHttpBase http) : super(http, _source('openverse'));
 
   @override
+  Duration get timeout => const Duration(seconds: 15);
+
+  @override
   Future<List<SearchResult>> search(SearchRequest request) async {
     final limit = request.resultCount.clamp(10, 30);
     final uri = Uri.https('api.openverse.org', '/v1/images/', {
@@ -200,7 +207,9 @@ class OpenverseProvider extends SearchProvider {
       'page': '${request.page + 1}',
       'page_size': '$limit',
       'filter_dead': 'true',
-      'mature': request.safeSearch ? 'false' : 'all',
+      // Openverse accepts a boolean, not the string `all`. Sending an invalid
+      // value made every request fall back to the index default.
+      'mature': request.safeSearch ? 'false' : 'true',
     });
 
     final data = await http.getJson(uri.toString());
@@ -258,6 +267,135 @@ class OpenverseProvider extends SearchProvider {
       );
     }
     return results;
+  }
+}
+
+/// Wikimedia Commons through the MediaWiki search generator. One adapter
+/// serves both media tabs: photographs for Images and freely licensed video
+/// for Videos, with the licence, author and file page kept alongside each hit.
+class WikimediaCommonsProvider extends SearchProvider {
+  WikimediaCommonsProvider(SiftHttpBase http) : super(http, _source('commons'));
+
+  @override
+  Duration get timeout => const Duration(seconds: 15);
+
+  @override
+  Future<List<SearchResult>> search(SearchRequest request) async {
+    final wantsVideo = request.vertical == SearchVertical.videos;
+    final limit = request.resultCount.clamp(10, 30);
+    // Image searches often return audio or documents that the MIME filter
+    // below drops, so ask for a wider page than the UI needs.
+    final pageSize = wantsVideo ? limit : (limit * 2).clamp(10, 50);
+    final search =
+        wantsVideo ? '${request.query} filetype:video' : request.query;
+    final uri = Uri.https('commons.wikimedia.org', '/w/api.php', {
+      'action': 'query',
+      'format': 'json',
+      'formatversion': '2',
+      'generator': 'search',
+      'gsrsearch': search,
+      'gsrnamespace': '6',
+      'gsrlimit': '$pageSize',
+      'gsroffset': '${request.page * pageSize}',
+      'prop': 'imageinfo',
+      'iiprop': 'url|mime|size|extmetadata',
+      'iiurlwidth': wantsVideo ? '640' : '720',
+      'iiurlheight': wantsVideo ? '360' : '720',
+    });
+
+    final data = await http.getJson(uri.toString());
+    final query = data['query'];
+    if (query is! Map) return const [];
+    final pages = query['pages'];
+    final items = pages is Map
+        ? pages.values
+        : pages is List
+            ? pages
+            : const [];
+    final results = <SearchResult>[];
+    for (final raw in items.whereType<Map>()) {
+      final infoList = raw['imageinfo'];
+      if (infoList is! List || infoList.isEmpty) continue;
+      final info = infoList.first;
+      if (info is! Map) continue;
+      final mime = info['mime']?.toString() ?? '';
+      final isVideo = mime.startsWith('video/');
+      if (wantsVideo != isVideo) continue;
+      final page = info['descriptionurl']?.toString() ?? '';
+      final title = _commonsTitle(raw['title']?.toString() ?? '');
+      if (page.isEmpty || title.isEmpty) continue;
+
+      final extRaw = info['extmetadata'];
+      final ext = extRaw is Map ? extRaw : const <String, dynamic>{};
+      final license = _extMetadata(ext, 'LicenseShortName');
+      final licenseUrl = _extMetadata(ext, 'LicenseUrl');
+      final author = _extMetadata(ext, 'Artist');
+      final description = stripHtml(_extMetadata(ext, 'ImageDescription'));
+      final seconds = info['duration'];
+      final duration =
+          seconds is num && seconds > 0 ? formatDuration(seconds.round()) : null;
+      final width = info['thumbwidth'] ?? info['width'];
+      final height = info['thumbheight'] ?? info['height'];
+      final thumb = info['thumburl']?.toString();
+      final original = info['url']?.toString();
+      final poster = thumb != null && thumb.startsWith('http')
+          ? thumb
+          : original;
+      if (poster == null || !poster.startsWith('http')) continue;
+
+      final details = <String>[
+        if (author.isNotEmpty) author,
+        if (isVideo && duration != null) duration,
+        if (description.isNotEmpty) truncateText(description, 120),
+        'Wikimedia Commons',
+      ];
+      results.add(
+        SearchResult(
+          id: _idFor('commons', page),
+          kind: isVideo ? ResultKind.video : ResultKind.image,
+          title: title,
+          url: page,
+          snippet: details.join(' · '),
+          sourceId: 'commons',
+          sourceName: 'Wikimedia Commons',
+          domain: 'commons.wikimedia.org',
+          imageUrl: poster,
+          thumbnailUrl: poster,
+          author: author.isEmpty ? null : author,
+          duration: duration,
+          meta: {
+            'license': license,
+            'licenseUrl': licenseUrl,
+            'author': author,
+            'width': width,
+            'height': height,
+            'mime': mime,
+            'originalUrl': original,
+            'pageId': raw['pageid'],
+            'attribution': [
+              if (author.isNotEmpty) author,
+              if (license.isNotEmpty) license,
+              'Wikimedia Commons',
+            ].join(' · '),
+          },
+        ),
+      );
+    }
+    return results;
+  }
+
+  static String _commonsTitle(String raw) {
+    var value = raw.trim();
+    if (value.toLowerCase().startsWith('file:')) value = value.substring(5);
+    final dot = value.lastIndexOf('.');
+    if (dot > 0) value = value.substring(0, dot);
+    return value.replaceAll('_', ' ').trim();
+  }
+
+  static String _extMetadata(Map meta, String key) {
+    final raw = meta[key];
+    if (raw is! Map) return '';
+    return stripHtml(raw['value']?.toString() ?? '');
   }
 }
 
@@ -337,6 +475,9 @@ class GoogleNewsProvider extends SearchProvider {
 
 class DailymotionProvider extends SearchProvider {
   DailymotionProvider(SiftHttpBase http) : super(http, _source('dailymotion'));
+
+  @override
+  Duration get timeout => const Duration(seconds: 8);
 
   @override
   Future<List<SearchResult>> search(SearchRequest request) async {
@@ -556,6 +697,9 @@ class SearxProvider extends SearchProvider {
       : super(http, _source('searx'));
 
   final String Function() _baseUrl;
+
+  @override
+  Duration get timeout => const Duration(seconds: 10);
 
   String _categoryFor(SearchVertical vertical) => switch (vertical) {
         SearchVertical.images => 'images',

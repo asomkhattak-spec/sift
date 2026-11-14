@@ -24,6 +24,7 @@ abstract class SiftHttpBase {
     Map<String, String>? headers,
     Duration timeout = const Duration(seconds: 9),
     int cacheSeconds = 0,
+    int maxBytes = 0,
   });
 
   Future<Map<String, dynamic>> getJson(
@@ -31,6 +32,7 @@ abstract class SiftHttpBase {
     Map<String, String>? headers,
     Duration timeout = const Duration(seconds: 9),
     int cacheSeconds = 0,
+    int maxBytes = 0,
   });
 
   /// Routes requests through an HTTP proxy, or clears the override.
@@ -71,26 +73,39 @@ class SiftHttp implements SiftHttpBase {
     Map<String, String>? headers,
     Duration timeout = const Duration(seconds: 9),
     int cacheSeconds = 0,
+    int maxBytes = 0,
   }) async {
     final cacheKey = _cacheKey(url, headers);
     if (cacheSeconds > 0) {
       final cached = _cache[cacheKey];
-      if (cached != null && cached.isFresh) return cached.body;
+      if (cached != null && cached.isFresh) {
+        if (maxBytes > 0 && cached.bytes > maxBytes) {
+          _cache.remove(cacheKey);
+        } else {
+          return cached.body;
+        }
+      }
     }
 
     var attempt = 0;
     while (true) {
       attempt += 1;
       try {
-        final body = await _fetch(url, headers: headers, timeout: timeout);
+        final fetched = await _fetch(
+          url,
+          headers: headers,
+          timeout: timeout,
+          maxBytes: maxBytes,
+        );
         if (cacheSeconds > 0) {
           _cache[cacheKey] = _CachedBody(
-            body,
+            fetched.body,
+            fetched.bytes,
             DateTime.now().add(Duration(seconds: cacheSeconds)),
           );
           _trimCache();
         }
-        return body;
+        return fetched.body;
       } on SiftHttpException catch (error) {
         final retryable = error.statusCode == null ||
             error.statusCode == 429 ||
@@ -110,6 +125,7 @@ class SiftHttp implements SiftHttpBase {
     Map<String, String>? headers,
     Duration timeout = const Duration(seconds: 9),
     int cacheSeconds = 0,
+    int maxBytes = 0,
   }) async {
     final body = await getString(
       url,
@@ -119,6 +135,7 @@ class SiftHttp implements SiftHttpBase {
       },
       timeout: timeout,
       cacheSeconds: cacheSeconds,
+      maxBytes: maxBytes,
     );
     try {
       final decoded = jsonDecode(body);
@@ -130,10 +147,11 @@ class SiftHttp implements SiftHttpBase {
     }
   }
 
-  Future<String> _fetch(
+  Future<_FetchedBody> _fetch(
     String url, {
     Map<String, String>? headers,
     required Duration timeout,
+    required int maxBytes,
   }) async {
     final uri = Uri.tryParse(url);
     if (uri == null || !uri.hasScheme) {
@@ -157,7 +175,22 @@ class SiftHttp implements SiftHttpBase {
       });
 
       final chunks = <int>[];
+      var received = 0;
+      if (maxBytes > 0 &&
+          response.contentLength > maxBytes) {
+        throw SiftHttpException(
+          'The source sent more data than expected.',
+          uri: uri.host,
+        );
+      }
       await for (final chunk in response.timeout(timeout)) {
+        received += chunk.length;
+        if (maxBytes > 0 && received > maxBytes) {
+          throw SiftHttpException(
+            'The source sent more data than expected.',
+            uri: uri.host,
+          );
+        }
         chunks.addAll(chunk);
       }
 
@@ -177,7 +210,7 @@ class SiftHttp implements SiftHttpBase {
       final Encoding encoding = charset == 'iso-8859-1'
           ? latin1
           : const Utf8Codec(allowMalformed: true);
-      return encoding.decode(chunks);
+      return _FetchedBody(encoding.decode(chunks), received);
     } on SiftHttpException {
       rethrow;
     } on SocketException catch (error) {
@@ -243,9 +276,16 @@ class SiftHttp implements SiftHttpBase {
   void clearCache() => _cache.clear();
 }
 
-class _CachedBody {
-  const _CachedBody(this.body, this.expiresAt);
+class _FetchedBody {
+  const _FetchedBody(this.body, this.bytes);
   final String body;
+  final int bytes;
+}
+
+class _CachedBody {
+  const _CachedBody(this.body, this.bytes, this.expiresAt);
+  final String body;
+  final int bytes;
   final DateTime expiresAt;
   bool get isFresh => DateTime.now().isBefore(expiresAt);
 }

@@ -122,7 +122,7 @@ class _WelcomePrinciple extends StatelessWidget {
               index,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: p.clay,
-                    fontSize: 9.5,
+                    fontSize: 11.5,
                     height: 1.7,
                     letterSpacing: 0.6,
                   ),

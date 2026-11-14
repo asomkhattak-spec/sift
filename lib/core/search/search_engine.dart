@@ -43,6 +43,7 @@ class SearchEngine {
     _bing = BingWebProvider(http);
     _wikipedia = WikipediaProvider(http);
     _openverse = OpenverseProvider(http);
+    _commons = WikimediaCommonsProvider(http);
     _news = GoogleNewsProvider(http);
     _videos = DailymotionProvider(http);
     _hackerNews = HackerNewsProvider(http);
@@ -59,6 +60,7 @@ class SearchEngine {
   late final BingWebProvider _bing;
   late final WikipediaProvider _wikipedia;
   late final OpenverseProvider _openverse;
+  late final WikimediaCommonsProvider _commons;
   late final GoogleNewsProvider _news;
   late final DailymotionProvider _videos;
   late final HackerNewsProvider _hackerNews;
@@ -106,7 +108,7 @@ class SearchEngine {
       try {
         final results = await task.provider
             .search(_requestForTask(request, task.vertical, query))
-            .timeout(const Duration(seconds: 6));
+            .timeout(task.provider.timeout);
         stopwatch.stop();
         statuses.add(
           ProviderStatus(
@@ -300,6 +302,7 @@ class SearchEngine {
         break;
       case SearchVertical.images:
         add(_openverse, SearchVertical.images);
+        add(_commons, SearchVertical.images);
         add(_searx, SearchVertical.images);
         break;
       case SearchVertical.news:
@@ -308,6 +311,7 @@ class SearchEngine {
         break;
       case SearchVertical.videos:
         add(_videos, SearchVertical.videos);
+        add(_commons, SearchVertical.videos);
         add(_searx, SearchVertical.videos);
         break;
       case SearchVertical.discuss:

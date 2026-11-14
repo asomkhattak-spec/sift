@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    />
+    <meta name="referrer" content="no-referrer" />
+    <title>Sift update service</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #202124;
+        --muted: #5f6368;
+        --faint: #80868b;
+        --line: #dadce0;
+        --soft: #f8f9fa;
+        --blue: #1a73e8;
+        --green: #188038;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        background: #ffffff;
+      }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #ffffff;
+        font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
+        font-size: 15px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .wrap {
+        width: min(780px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 30px 0 54px;
+      }
+
+      header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 20px;
+        padding-bottom: 26px;
+      }
+
+      .wordmark {
+        margin: 0;
+        font-size: 30px;
+        font-weight: 500;
+        letter-spacing: -0.6px;
+        line-height: 1;
+      }
+
+      .wordmark span:nth-child(1) {
+        color: #4285f4;
+      }
+      .wordmark span:nth-child(2) {
+        color: #ea4335;
+      }
+      .wordmark span:nth-child(3) {
+        color: #fbbc05;
+      }
+      .wordmark span:nth-child(4) {
+        color: #34a853;
+      }
+
+      .service {
+        color: var(--muted);
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(30px, 7vw, 42px);
+        font-weight: 400;
+        letter-spacing: -1.2px;
+        line-height: 1.15;
+      }
+
+      .lede {
+        max-width: 620px;
+        margin: 0 0 30px;
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .card {
+        min-height: 178px;
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #ffffff;
+      }
+
+      .label {
+        margin: 0 0 10px;
+        color: var(--faint);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 1.1px;
+        text-transform: uppercase;
+      }
+
+      .state {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 4px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--faint);
+        flex: none;
+      }
+
+      .state.live .dot {
+        background: var(--green);
+      }
+
+      .state.off .dot {
+        background: var(--faint);
+      }
+
+      .headline {
+        margin: 0 0 8px;
+        font-size: 22px;
+        font-weight: 500;
+        letter-spacing: -0.3px;
+        line-height: 1.25;
+      }
+
+      .body {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .body strong {
+        color: var(--ink);
+        font-weight: 500;
+      }
+
+      .notes {
+        margin: 12px 0 0;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 14px;
+      }
+
+      a {
+        color: var(--blue);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      .quiet-link {
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      .swatch {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin-right: 6px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: 50%;
+        vertical-align: -1px;
+        background: var(--blue);
+      }
+
+      .rule {
+        height: 1px;
+        margin: 34px 0 22px;
+        background: var(--line);
+      }
+
+      h2 {
+        margin: 0 0 10px;
+        font-size: 15px;
+        font-weight: 500;
+      }
+
+      .notes-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .notes-list li {
+        position: relative;
+        margin: 0 0 9px;
+        padding-left: 16px;
+      }
+
+      .notes-list li::before {
+        position: absolute;
+        top: 0.72em;
+        left: 0;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--line);
+        content: "";
+      }
+
+      footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 18px;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 36px;
+        color: var(--faint);
+        font-size: 12px;
+      }
+
+      footer .links {
+        display: flex;
+        gap: 16px;
+      }
+
+      footer a {
+        color: var(--muted);
+      }
+
+      .stamp {
+        color: var(--faint);
+        font-size: 12px;
+      }
+
+      @media (max-width: 620px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        header {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .card {
+          min-height: 0;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          scroll-behavior: auto !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <p class="wordmark" aria-label="Sift">
+          <span>S</span><span>i</span><span>f</span><span>t</span>
+        </p>
+        <div class="service">Update service</div>
+      </header>
+
+      <main>
+        <h1>The quiet endpoint behind Sift.</h1>
+        <p class="lede">
+          Sift checks this service once per launch. It carries a small interface
+          bundle and release information — data only, never code. There are no
+          ads here, and no visitor account.
+        </p>
+
+        <div class="grid">
+          <section class="card" aria-labelledby="ui-label">
+            <p class="label" id="ui-label">Interface</p>
+            <p class="state" id="ui-state">
+              <span class="dot" aria-hidden="true"></span>
+              <span id="ui-state-text">Checking</span>
+            </p>
+            <p class="headline" id="ui-headline">
+              <span class="swatch" id="ui-swatch" aria-hidden="true"></span>
+              <span id="ui-version">Bundle</span>
+            </p>
+            <p class="body" id="ui-body">
+              Reading the current interface bundle.
+            </p>
+            <p class="notes" id="ui-tagline" hidden></p>
+          </section>
+
+          <section class="card" aria-labelledby="update-label">
+            <p class="label" id="update-label">App release</p>
+            <p class="state" id="update-state">
+              <span class="dot" aria-hidden="true"></span>
+              <span id="update-state-text">Checking</span>
+            </p>
+            <p class="headline" id="update-headline">Release channel</p>
+            <p class="body" id="update-body">
+              Asking the release channel for its latest manifest.
+            </p>
+            <div class="actions" id="update-actions"></div>
+            <p class="notes" id="update-notes" hidden></p>
+          </section>
+        </div>
+
+        <p class="stamp" id="stamp">This check happens only in your browser.</p>
+
+        <div class="rule"></div>
+
+        <h2>What can change remotely</h2>
+        <ul class="notes-list">
+          <li>
+            Accent colour, tagline, home-screen starters, and whether the
+            shortcut and privacy cards appear.
+          </li>
+          <li>
+            The interface bundle cannot add code, change search settings, or
+            send your queries anywhere. Turning interface updates off restores
+            the copy built into the app.
+          </li>
+          <li>
+            App releases are APKs attached to a public GitHub release. Sift
+            checks the SHA-256 digest before Android's installer is opened, and
+            Android still asks for your confirmation.
+          </li>
+        </ul>
+      </main>
+
+      <footer>
+        <span>Sift is an independent, ad-free search app for Android.</span>
+        <span class="links">
+          <a
+            href="https://github.com/asomkhattak-spec/sift"
+            rel="noopener noreferrer"
+            >Source</a
+          >
+          <a
+            href="https://github.com/asomkhattak-spec/sift/blob/main/PRIVACY.md"
+            rel="noopener noreferrer"
+            >Privacy</a
+          >
+        </span>
+      </footer>
+    </div>
+
+    <noscript>
+      <p style="max-width: 780px; margin: 0 auto; padding: 0 20px 40px; color: #5f6368">
+        This status page needs JavaScript. The app itself does not.
+      </p>
+    </noscript>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

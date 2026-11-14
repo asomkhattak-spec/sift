@@ -118,6 +118,7 @@ double _sourceWeight(String sourceId) {
     'gnews' => 1.4,
     'searx' => 1.2,
     'openverse' => 0.4,
+    'commons' => 0.7,
     'dailymotion' => 0.6,
     _ => 0.8,
   };

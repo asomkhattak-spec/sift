@@ -184,11 +184,10 @@ class LibraryScreenState extends State<LibraryScreen> {
           ),
           children: [
             SiftPageTitle(
-              kicker: 'YOUR READING DESK',
               title: 'Library',
               subtitle:
-                  'Saved pages, notes, and recent activity. Everything here lives '
-                  'on this phone; pages you save are never uploaded.',
+                  'Saved pages, notes, and recent searches. Everything here '
+                  'stays on this phone.',
               actions: [
                 if (_tab == _LibraryTab.notes)
                   SiftIconButton(
@@ -220,7 +219,7 @@ class LibraryScreenState extends State<LibraryScreen> {
             TextField(
               onChanged: (value) => setState(() => _filter = value),
               decoration: const InputDecoration(
-                hintText: 'Filter this desk',
+                hintText: 'Filter saved pages, notes, and history',
                 prefixIcon: Icon(Icons.filter_alt_outlined, size: 18),
               ),
             ),
@@ -257,7 +256,7 @@ class LibraryScreenState extends State<LibraryScreen> {
                   body: saved.isEmpty
                       ? 'Use the bookmark on any result or in the reader to keep a '
                           'page here. Saved pages survive a restart.'
-                      : 'Try a shorter filter, or clear it to see the whole desk.',
+                      : 'Try a shorter filter, or clear it to see everything.',
                 )
               else
                 for (var i = 0; i < filteredSaved.length; i++) ...[
@@ -279,7 +278,7 @@ class LibraryScreenState extends State<LibraryScreen> {
               if (filteredNotes.isEmpty)
                 SiftEmpty(
                   icon: Icons.edit_note_outlined,
-                  title: notes.isEmpty ? 'A quiet place to think' : 'No matches',
+                  title: notes.isEmpty ? 'No notes yet' : 'No matches',
                   body: notes.isEmpty
                       ? 'Notes stay on this phone and can be indexed into My Search '
                           'so your own words are searchable too.'
@@ -398,7 +397,7 @@ class _SavedRow extends StatelessWidget {
                     '${domainOf(page.url)}  ·  saved ${relativeDate(page.savedAt)}',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: p.faint,
-                          fontSize: 8.5,
+                          fontSize: 11.5,
                         ),
                   ),
                 ],
@@ -470,11 +469,11 @@ class _NoteRow extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        relativeDate(note.updatedAt).toUpperCase(),
+                        relativeDate(note.updatedAt),
                         style:
                             Theme.of(context).textTheme.labelSmall?.copyWith(
                                   color: p.faint,
-                                  fontSize: 8,
+                                  fontSize: 11,
                                 ),
                       ),
                       if (onOpenLink != null) ...[
@@ -549,7 +548,7 @@ class _HistoryRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: p.faint,
-                          fontSize: 8.5,
+                          fontSize: 11.5,
                         ),
                   ),
                 ],

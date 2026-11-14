@@ -145,7 +145,7 @@ class SiftCircleAction extends StatelessWidget {
               badge!,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: Colors.white,
-                    fontSize: 8,
+                    fontSize: 9.5,
                     height: 1.1,
                     fontWeight: FontWeight.w700,
                   ),
@@ -256,10 +256,12 @@ class SiftShortcut extends StatelessWidget {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: p.isDark ? p.surfaceRaised : tint.withOpacity(0.1),
+                  color: p.isDark
+                      ? p.surfaceRaised
+                      : const Color(0xFFF1F3F4),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: tint, size: 25),
+                child: Icon(icon, color: tint, size: 24),
               ),
               const SizedBox(height: 8),
               Text(
@@ -269,6 +271,7 @@ class SiftShortcut extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: p.inkSoft,
                       fontSize: 12,
+                      fontWeight: FontWeight.w400,
                     ),
               ),
             ],
@@ -335,7 +338,7 @@ class SiftIconButton extends StatelessWidget {
               badge!,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: const Color(0xFFFFF8F2),
-                    fontSize: 8,
+                    fontSize: 9.5,
                     height: 1.1,
                   ),
             ),
@@ -553,7 +556,6 @@ class SiftFilterTab extends StatelessWidget {
 class SiftSectionHead extends StatelessWidget {
   const SiftSectionHead({
     required this.title,
-    this.kicker,
     this.action,
     this.onAction,
     this.bottomPadding = 14,
@@ -561,39 +563,32 @@ class SiftSectionHead extends StatelessWidget {
   });
 
   final String title;
-  final String? kicker;
   final String? action;
   final VoidCallback? onAction;
   final double bottomPadding;
 
   @override
   Widget build(BuildContext context) {
+    final p = context.sift;
     return Padding(
       padding: EdgeInsets.only(bottom: bottomPadding),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (kicker != null) ...[
-                  SiftKicker(kicker!),
-                  const SizedBox(height: 7),
-                ],
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w500,
-                      ),
-                ),
-              ],
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: p.ink,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: -0.2,
+                  ),
             ),
           ),
           if (action != null)
             Padding(
-              padding: const EdgeInsets.only(bottom: 2),
+              padding: const EdgeInsets.only(left: 12),
               child: SiftTextAction(label: action!, onTap: onAction),
             ),
         ],
@@ -605,7 +600,6 @@ class SiftSectionHead extends StatelessWidget {
 class SiftPageTitle extends StatelessWidget {
   const SiftPageTitle({
     required this.title,
-    this.kicker,
     this.subtitle,
     this.actions = const [],
     this.bottom = 22,
@@ -613,38 +607,48 @@ class SiftPageTitle extends StatelessWidget {
   });
 
   final String title;
-  final String? kicker;
   final String? subtitle;
   final List<Widget> actions;
   final double bottom;
 
   @override
   Widget build(BuildContext context) {
+    final p = context.sift;
     return Padding(
       padding: EdgeInsets.only(bottom: bottom),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (actions.isNotEmpty)
-            Row(
-              children: [
-                if (kicker != null) Expanded(child: SiftKicker(kicker!)),
-                if (kicker == null) const Spacer(),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        color: p.ink,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: -0.5,
+                        height: 1.2,
+                      ),
+                ),
+              ),
+              if (actions.isNotEmpty) ...[
+                const SizedBox(width: 8),
                 ...actions,
               ],
-            )
-          else if (kicker != null)
-            SiftKicker(kicker!),
-          if (kicker != null || actions.isNotEmpty) const SizedBox(height: 12),
-          Text(title, style: Theme.of(context).textTheme.displaySmall),
+            ],
+          ),
           if (subtitle != null) ...[
-            const SizedBox(height: 9),
+            const SizedBox(height: 8),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 560),
               child: Text(
                 subtitle!,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: context.sift.muted,
+                      color: p.muted,
+                      height: 1.5,
                     ),
               ),
             ),

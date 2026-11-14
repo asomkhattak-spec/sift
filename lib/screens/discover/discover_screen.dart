@@ -96,11 +96,10 @@ class DiscoverScreenState extends State<DiscoverScreen> {
                 sliver: SliverList.list(
                   children: [
                     SiftPageTitle(
-                      kicker: 'THE OPEN WEB, EDITED',
-                      title: greetingFor(DateTime.now()),
+                      title: 'Discover',
                       subtitle:
-                          'A short, human-scale edition for ${longDate(DateTime.now())}. '
-                          'No feed algorithm, no autoplay, no advertising.',
+                          'Top stories and images for ${longDate(DateTime.now())}, '
+                          'gathered from the sources you keep enabled.',
                       actions: [
                         SiftIconButton(
                           icon: Icons.refresh_rounded,
@@ -136,8 +135,7 @@ class DiscoverScreenState extends State<DiscoverScreen> {
                     sliver: SliverList.list(
                       children: [
                         SiftSectionHead(
-                          kicker: 'CURRENT',
-                          title: 'Worth your attention',
+                          title: 'Top stories',
                           action: 'Search news',
                           onAction: () => startSiftSearch(
                             context,
@@ -147,7 +145,6 @@ class DiscoverScreenState extends State<DiscoverScreen> {
                         for (var i = 0; i < feed.stories.length; i++) ...[
                           _StoryRow(
                             result: feed.stories[i],
-                            index: i + 1,
                             onTap: () => _open(feed.stories[i]),
                           ),
                           if (i != feed.stories.length - 1) const SiftRule(),
@@ -166,8 +163,7 @@ class DiscoverScreenState extends State<DiscoverScreen> {
                     sliver: SliverList.list(
                       children: [
                         SiftSectionHead(
-                          kicker: 'A MOMENT OF LOOKING',
-                          title: 'The visual world',
+                          title: 'In pictures',
                           action: 'Open images',
                           onAction: () => startSiftSearch(
                             context,
@@ -188,14 +184,8 @@ class DiscoverScreenState extends State<DiscoverScreen> {
                     ),
                     sliver: SliverList.list(
                       children: [
-                        SiftSectionHead(
-                          kicker: 'FROM MY SEARCH',
-                          title: 'A shelf of starting points',
-                          action: 'Open My Search',
-                          onAction: () => startSiftSearch(
-                            context,
-                            feed.shelf.first.title,
-                          ),
+                        const SiftSectionHead(
+                          title: 'From My Search',
                         ),
                         for (final document
                             in feed.shelf.take(4).toList()) ...[
@@ -239,17 +229,16 @@ class DiscoverScreenState extends State<DiscoverScreen> {
 class _StoryRow extends StatelessWidget {
   const _StoryRow({
     required this.result,
-    required this.index,
     required this.onTap,
   });
 
   final SearchResult result;
-  final int index;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final p = context.sift;
+    final source = result.host.isEmpty ? 'Sift' : result.host;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -257,16 +246,24 @@ class _StoryRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              width: 27,
+            Container(
+              width: 26,
+              height: 26,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: p.surfaceRaised,
+                borderRadius: BorderRadius.circular(7),
+              ),
               child: Text(
-                index.toString().padLeft(2, '0'),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: p.clay,
-                      fontSize: 9.5,
+                firstLetter(source),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: p.mossDeep,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
               ),
             ),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,8 +273,10 @@ class _StoryRow extends StatelessWidget {
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          height: 1.3,
-                          fontSize: 16.5,
+                          color: p.ink,
+                          height: 1.35,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
                         ),
                   ),
                   if (result.snippet.isNotEmpty) ...[
@@ -288,31 +287,39 @@ class _StoryRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: p.muted,
-                            height: 1.55,
+                            height: 1.5,
+                            fontSize: 13,
                           ),
                     ),
                   ],
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text(
-                        result.host.toUpperCase(),
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: p.mossDeep,
-                              fontSize: 9,
-                            ),
+                      Flexible(
+                        child: Text(
+                          source,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(
+                                color: p.muted,
+                                fontSize: 12,
+                              ),
+                        ),
                       ),
                       if (result.publishedAt != null) ...[
                         Text(
                           '  ·  ',
-                          style: TextStyle(color: p.faint, fontSize: 9),
+                          style: TextStyle(color: p.faint, fontSize: 11),
                         ),
                         Text(
                           relativeDate(result.publishedAt),
                           style:
                               Theme.of(context).textTheme.labelSmall?.copyWith(
                                     color: p.faint,
-                                    fontSize: 9,
+                                    fontSize: 12,
                                   ),
                         ),
                       ],
@@ -321,8 +328,6 @@ class _StoryRow extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 10),
-            Icon(Icons.north_east_rounded, size: 15, color: p.faint),
           ],
         ),
       ),
@@ -360,8 +365,7 @@ class _ImageBand extends StatelessWidget {
                     child: Container(
                       decoration: BoxDecoration(
                         color: p.surfaceRaised,
-                        border: Border.all(color: p.line),
-                        borderRadius: BorderRadius.circular(SiftRadius.xs),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: image == null
@@ -391,10 +395,10 @@ class _ImageBand extends StatelessWidget {
                     truncateText(result.title, 54),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           color: p.inkSoft,
                           height: 1.35,
-                          letterSpacing: 0.1,
+                          fontSize: 12,
                         ),
                   ),
                 ],
@@ -427,13 +431,15 @@ class _ShelfRow extends StatelessWidget {
               height: 36,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                border: Border.all(color: p.lineStrong),
-                borderRadius: BorderRadius.circular(SiftRadius.xs),
+                color: p.surfaceRaised,
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 firstLetter(document.title),
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: p.clay,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: p.mossDeep,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
                       height: 1,
                     ),
               ),
@@ -481,8 +487,8 @@ class _PartialNote extends StatelessWidget {
       padding: const EdgeInsets.only(top: 10),
       child: SiftErrorNote(
         message: errors.length == 1
-            ? 'One source was unavailable. The rest of this edition is intact.'
-            : '${errors.length} sources were unavailable. The rest of this edition is intact.',
+            ? 'One source could not be reached. Showing the rest of this edition.'
+            : '${errors.length} sources could not be reached. Showing the rest of this edition.',
       ),
     );
   }
@@ -506,13 +512,13 @@ class _Colophon extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(Icons.eco_outlined, size: 15, color: p.moss),
+        Icon(Icons.lock_outline_rounded, size: 14, color: p.faint),
         const SizedBox(width: 9),
         Expanded(
           child: Text(
-            'Assembled on your phone from ${pluralize(active, 'chosen source')}. '
-            '${loadedAt == null ? 'Pull down to refresh.' : 'Last edited ${timeOfDayLabel(loadedAt!)}.'} '
-            'Nothing here is sponsored or ranked by an advertiser.',
+            'Built on this phone from ${pluralize(active, 'enabled source')}. '
+            '${loadedAt == null ? 'Pull down to refresh.' : 'Updated at ${timeOfDayLabel(loadedAt!)}.'} '
+            'No ads or sponsored placement.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: p.faint,
                   height: 1.55,

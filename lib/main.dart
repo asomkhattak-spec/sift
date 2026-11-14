@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
+import 'core/ota/remote_ui_service.dart';
+import 'core/ota/update_service.dart';
 import 'core/search/local_index.dart';
 import 'core/search/search_engine.dart';
 import 'core/services/http_service.dart';
@@ -32,6 +34,16 @@ Future<void> main() async {
     await localIndex.load();
 
     final native = NativeBridge()..initialize();
+    final remoteUi = RemoteUiService(
+      prefs: prefs,
+      http: http,
+      settings: settings,
+    );
+    final updates = UpdateService(
+      prefs: prefs,
+      native: native,
+      http: http,
+    );
     final services = SiftServices(
       settings: settings,
       library: library,
@@ -47,9 +59,16 @@ Future<void> main() async {
       blocker: TrackerBlocker(),
       core: core,
       searchBus: SearchBus(),
+      remoteUi: remoteUi,
+      updates: updates,
     );
 
     runApp(SiftApp(services: services));
+
+    // Both channels are optional. They run after the first frame so a slow
+    // network never delays the opening search screen.
+    unawaited(remoteUi.refresh());
+    unawaited(updates.checkInBackground());
   } catch (error, stack) {
     debugPrint('Sift failed to start: $error\n$stack');
     runApp(SiftBootstrapError(error: error));

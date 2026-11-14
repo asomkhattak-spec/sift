@@ -95,6 +95,29 @@ class SiftPalette extends ThemeExtension<SiftPalette> {
     isDark: true,
   );
 
+  /// Derives the interactive colour family from a remote accent while keeping
+  /// every other surface neutral. Light accents are pre-checked for contrast
+  /// in [SiftUiConfig]; dark mode lifts them until links stay legible.
+  SiftPalette withAccent(Color accent) {
+    final hsl = HSLColor.fromColor(accent);
+    final clamped = hsl.saturation < 0.08
+        ? hsl
+        : hsl.withSaturation(hsl.saturation.clamp(0.35, 0.95).toDouble());
+    final Color strong;
+    final Color deep;
+    final Color wash;
+    if (isDark) {
+      strong = clamped.withLightness(0.74).toColor();
+      deep = clamped.withLightness(0.84).toColor();
+      wash = Color.alphaBlend(strong.withOpacity(0.18), paper);
+    } else {
+      strong = accent;
+      deep = Color.alphaBlend(Colors.black.withOpacity(0.18), accent);
+      wash = Color.alphaBlend(accent.withOpacity(0.10), paper);
+    }
+    return copyWith(moss: strong, mossDeep: deep, mossWash: wash);
+  }
+
   @override
   SiftPalette copyWith({
     Color? paper,
@@ -195,10 +218,12 @@ class SiftTheme {
     Brightness brightness, {
     double textScale = 1.0,
     bool useSerif = false,
+    Color? accent,
   }) {
-    final p = brightness == Brightness.dark
+    final basePalette = brightness == Brightness.dark
         ? SiftPalette.dark
         : SiftPalette.light;
+    final p = accent == null ? basePalette : basePalette.withAccent(accent);
     final base = brightness == Brightness.dark
         ? ThemeData.dark(useMaterial3: true)
         : ThemeData.light(useMaterial3: true);
@@ -449,37 +474,6 @@ class SiftTheme {
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
         },
       ),
-    );
-  }
-}
-
-/// A small, quiet section label. Kept for screens that need one; search
-/// results use plain source lines instead.
-class SiftKicker extends StatelessWidget {
-  const SiftKicker(this.text, {super.key, this.color, this.trailing});
-
-  final String text;
-  final Color? color;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.sift;
-    return Row(
-      children: [
-        Text(
-          text,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: color ?? p.muted,
-                letterSpacing: 0.1,
-                fontSize: 12,
-              ),
-        ),
-        if (trailing != null) ...[
-          const SizedBox(width: 8),
-          trailing!,
-        ],
-      ],
     );
   }
 }

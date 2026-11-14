@@ -61,6 +61,21 @@ const List<SourceDefinition> kSourceCatalog = [
     verticals: {SearchVertical.images},
   ),
   SourceDefinition(
+    id: 'commons',
+    name: 'Wikimedia Commons',
+    shortName: 'Commons',
+    description:
+        'Freely licensed photographs, diagrams and video from Wikimedia '
+        'Commons. Every result carries its author and licence so attribution '
+        'is one tap away.',
+    homepage: 'https://commons.wikimedia.org',
+    host: 'commons.wikimedia.org',
+    privacyNote:
+        'The Wikimedia Foundation receives your query. Media files and their '
+        'pages are loaded from Wikimedia when you preview or open them.',
+    verticals: {SearchVertical.images, SearchVertical.videos},
+  ),
+  SourceDefinition(
     id: 'dailymotion',
     name: 'Dailymotion',
     shortName: 'Video',
