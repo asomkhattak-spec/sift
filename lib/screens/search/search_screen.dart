@@ -1243,7 +1243,7 @@ class _ResultTab extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 7),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1252,7 +1252,7 @@ class _ResultTab extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(icon, size: 15, color: color),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 3),
                   Text(
                     label,
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
