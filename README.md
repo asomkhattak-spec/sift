@@ -19,8 +19,8 @@ native library is unavailable.
 
 - The on-device index answers first: Sift Local results paint immediately,
   before any web source replies.
-- One search field across six verticals: All, Web, Images, News, Videos and
-  Discussions.
+- One search field across six verticals: All, Images, Videos, News, Discuss
+  and Web.
 - An **On-device only** toggle (also in Settings → Search) that sends no query
   to any web source and uses only the local index plus locally computed
   answers.
@@ -41,6 +41,16 @@ native library is unavailable.
   query-completion service, with a switch to turn remote suggestions off.
 - Pull to refresh, paginated results, safe search, language preference and a
   10–30 result setting.
+
+**Images and videos**
+
+- Images tab with a responsive masonry grid and a full-screen, swipeable
+  viewer with double-tap and pinch zoom.
+- Every image shows its source, author and licence where the provider supplies
+  them; open, download, share or save it from the viewer.
+- Videos tab with 16:9 posters, duration, creator, date and source metadata.
+- Openverse and Wikimedia Commons supply images; Wikimedia Commons and
+  Dailymotion supply videos. Each source can be switched off independently.
 
 **My Search**
 
@@ -94,7 +104,11 @@ native library is unavailable.
 
 Sift is designed to collect less, not to promise magic.
 
-- No account, no advertising identifier, no analytics SDK, no Sift server.
+- No account, no advertising identifier, no analytics SDK and no search
+  backend that sees queries.
+- The optional update service (`sift-ota.vercel.app`) serves version metadata
+  and a cached UI config bundle. It never receives search queries, history or
+  an account identifier.
 - Settings, history, saved pages, notes and the local index stay in the app's
   private storage.
 - Private browsing is on by default; history is off by default; third-party
@@ -147,8 +161,8 @@ same behaviour.
 
 The fastest path is the GitHub Actions workflow: every push to `main` runs the
 Rust tests, Flutter analysis, Dart tests and an APK build, then uploads the APK
-as an artifact. A `v*` tag also publishes a GitHub release with the APK
-attached.
+as an artifact. A `v*` tag also publishes a GitHub release with the APK and
+the signed update manifest attached.
 
 For a local build you need Flutter 3.24.5, Java 17, Rust and an Android NDK.
 None of these are required for editing the Dart source.
@@ -210,6 +224,7 @@ additions, not the product.
 | Wikipedia | Web, Discussions | MediaWiki search API |
 | Google News (RSS) | News | Headline and publisher only |
 | Openverse | Images | CC-licensed image search |
+| Wikimedia Commons | Images, Videos | Freely licensed media with author and licence metadata |
 | Dailymotion | Videos | Public video search API |
 | Hacker News (Algolia) | Discussions | Stories and comments |
 | Stack Exchange | Discussions | Q&A search |
@@ -242,9 +257,21 @@ Sift does not request location, contacts, camera, microphone, calendar or
 
 ## Status
 
-Version 1.0.0. The APK is built and signed in CI; no local Flutter or Android
-toolchain is required for development. The repository is intentionally
-self-contained: no private servers, no hidden endpoints, no ad SDKs.
+Version 1.1.0 (build 2). Images and Videos are fully functional, and both
+update channels are implemented: a cached UI bundle and a signed APK update
+through GitHub Releases.
+
+The update service is live but reports no update, because no published release
+currently contains an update manifest. The 1.1.0 APK is built and signed in CI
+and is attached to the `1.1.0` release and to the latest Actions run. A
+`v1.1.0` release would add the signed `update.json` and enable in-app updates;
+OTA stays disabled until that manifest is published.
+
+The 1.0.0 release was signed with a per-build debug key, so installing 1.1.0
+over it requires uninstalling 1.0.0 first. The 1.1.0 APK is signed with the
+stable Sift release key. The APK is built and signed in CI; no local Flutter or
+Android toolchain is required for development. The repository is intentionally
+self-contained: no private search servers, no hidden endpoints, no ad SDKs.
 
 ## License
 
